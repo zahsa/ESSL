@@ -15,8 +15,9 @@ class chromosome_generator:
         self.geno2pheno = {
             i: a for i, a in enumerate(self.augmentations)
         }
-        # representation - random permutation and random intensity
+        
     def __call__(self):
+        # representation = random permutation and random intensity
         return [
             (self.pheno2geno[k], random.uniform(*self.augmentations[k]))
             for k in random.sample(list(self.augmentations.keys()), len(self.augmentations))
