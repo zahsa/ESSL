@@ -6,7 +6,7 @@ from deap import tools
 from chromosome import chromosome_generator
 import fitness
 
-def main(pop_size, fitness_function):
+def main(pop_size, fitness_function, dataset, ):
     # init algo #
     toolbox = base.Toolbox()
     toolbox.register("individual", chromosome_generator())
@@ -20,4 +20,4 @@ def main(pop_size, fitness_function):
 
 
 if __name__ == "__main__":
-    main(300, fitness_function="dummy_eval")
+    main(300, fitness_function="eval_chromosome")
