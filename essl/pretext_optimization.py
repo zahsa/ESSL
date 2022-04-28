@@ -43,7 +43,6 @@ class SimCLR(nn.Module):
                 optimizer.step()
                 optimizer.zero_grad()
             avg_loss = total_loss / len(dataloader)
-            print(f"epoch: {epoch:>02}, loss: {avg_loss:.5f}")
             losses.append(float(avg_loss))
         return losses
 

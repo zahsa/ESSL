@@ -19,7 +19,7 @@ from essl import pretext_optimization
 from essl import backbones
 from essl import losses
 from essl import datasets
-from essl import evaluate
+from essl import evaluate_downstream
 
 def dummy_eval(chromosome):
     """
@@ -71,7 +71,7 @@ class fitness_function:
                  ssl_task: str,
                  ssl_epochs: int,
                  ssl_batch_size: int,
-                 eval_method: str,
+                 evaluate_downstream_method: str,
                  device: str = "cuda"):
         self.dataset = datasets.__dict__[dataset]()
         self.backbone = backbone
@@ -82,7 +82,7 @@ class fitness_function:
                                     ssl_batch_size,
                                     device
                                     )
-        self.eval = evaluate.__dict__[eval_method](self.dataset)
+        self.evaluate_downstream = evaluate_downstream.__dict__[evaluate_downstream_method](self.dataset)
         self.device = device
 
     @staticmethod
@@ -97,7 +97,7 @@ class fitness_function:
     def __call__(self, chromosome):
         transform = self.gen_augmentation_torch(chromosome)
         representation = self.ssl_task(transform)
-        return self.eval(representation)
+        return self.evaluate_downstream(representation)
 
 
 if __name__ == "__main__":
@@ -108,7 +108,7 @@ if __name__ == "__main__":
                                  ssl_task="SimCLR",
                                  ssl_epochs=1,
                                  ssl_batch_size=256,
-                                 eval_method="finetune",
+                                 evaluate_downstream_method="finetune",
                                  device = "cuda")
     print(fitness(cc))
 
