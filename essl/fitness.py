@@ -13,34 +13,13 @@ import pandas as pd
 import os
 from sklearn.metrics import accuracy_score
 
-import ops
-import chromosome
-
-
-class SimCLR(nn.Module):
-    def __init__(self, backbone, out_features):
-        super().__init__()
-        self.backbone = backbone
-        self.projection_head = SimCLRProjectionHead(out_features, 512, 128)
-
-    def forward(self, x):
-        x = self.backbone(x).flatten(start_dim=1)
-
-        z = self.projection_head(x)
-        return z
-
-class finetune_model(nn.Module):
-    def __init__(self, backbone, in_features, num_outputs):
-        super().__init__()
-        self.backbone = backbone
-        self.classifier = torch.nn.Sequential(
-            torch.nn.Linear(in_features=in_features, out_features=num_outputs, bias=True),
-        )
-    def forward(self, x):
-        x = self.backbone(x).flatten(start_dim=1)
-        x = self.classifier(x)
-        return x
-
+from essl import ops
+from essl import chromosome
+from essl import pretext_optimization
+from essl import backbones
+from essl import losses
+from essl import datasets
+from essl import evaluate
 
 def dummy_eval(chromosome):
     """
@@ -52,202 +31,86 @@ def dummy_eval(chromosome):
     opt = list(range(len(permutation)))
     return sum(np.array(opt) == np.array(permutation))
 
-def gen_augmentation_torch(chromosome: list) -> torchvision.transforms.Compose:
-    # gen augmentation
-    # dataloader(augmentation)
-    aug = torchvision.transforms.Compose([
-        torchvision.transforms.Lambda(ops.__dict__[op](intensity=i))
-        for op, i in chromosome
-    ]+[torchvision.transforms.ToTensor()])
-    return aug
-
-def gen_augmentation_PIL(chromosome: list) -> torchvision.transforms.Compose:
-    # gen augmentation
-    # dataloader(augmentation)
-    aug = torchvision.transforms.Compose([
-        torchvision.transforms.Lambda(ops.__dict__[op](intensity=i))
-        for op, i in chromosome
-    ])
-    return aug
-
-def ssl_representation(aug: torchvision.transforms.Compose,
-                       dataset: LightlyDataset,
-                       num_epochs: int,
-                       device: str):
-    # return features
-    # model
-    # call ssl training
-    # different ssl algorithms
-    backbone = torchvision.models.resnet18().to(device)
-    model = SimCLR(backbone, out_features=backbone.fc.out_features).to(device)
-
-    # custom colate function -> basecollate
-    collate_fn = BaseCollateFunction(aug)
-    dataloader = torch.utils.data.DataLoader(
-        dataset,
-        batch_size=256,
-        collate_fn=collate_fn,
-        shuffle=True,
-        drop_last=True,
-        num_workers=8,
-    )
-    criterion = NTXentLoss().to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.06)
-    losses = []
-    print("Starting Training")
-    for epoch in range(num_epochs):
-        total_loss = 0
-        for (x0, x1), _, _ in dataloader:
-            x0 = x0.to(device)
-            x1 = x1.to(device)
-            z0 = model(x0)
-            z1 = model(x1)
-            loss = criterion(z0, z1)
-            total_loss += loss.detach()
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-        avg_loss = total_loss / len(dataloader)
-        print(f"epoch: {epoch:>02}, loss: {avg_loss:.5f}")
-        losses.append(float(avg_loss))
-    return model
+class pretext_task:
+    def __init__(self,
+                 method: str,
+                 dataset: datasets.Data,
+                 backbone: str,
+                 num_epochs: int,
+                 batch_size: int,
+                 device: str):
+        self.dataset = LightlyDataset.from_torch_dataset(dataset.ssl_data)
+        self.backbone = backbones.__dict__[backbone]
+        self.model = pretext_optimization.__dict__[method]
+        self.num_epochs = num_epochs
+        self.batch_size = batch_size
+        self.device = device
 
 
-def visualize_chromosomes(save_path, num_samples=5):
-    c = chromosome.chromosome_generator()
-    cifar10 = torchvision.datasets.CIFAR10("datasets/cifar10", download=True)
-    sample = PIL.Image.fromarray(cifar10.data[7])
-    sample.save(os.path.join(save_path, "original.jpg"))
 
-    chromosomes = []
-    for i in range(num_samples):
-        cc = c()
-        chromosomes.append(cc)
-        aug = gen_augmentation_PIL(cc)
-        augmented_im = aug(sample)
-        augmented_im.save(os.path.join(save_path, f"{i}.jpg"))
-    df = pd.DataFrame(chromosomes, columns=[f"op{i}" for i in range(len(chromosomes[0]))])
-    df.to_csv(os.path.join(save_path, "chromosomes.csv"))
+    def __call__(self, transform):
+        model = self.model(self.backbone())
+        model.fit(transform,
+                  self.dataset,
+                  self.batch_size,
+                  self.num_epochs,
+                  self.device)
+        return model
 
 
-def finetune_features(model: torch.nn.Module,
-                       train_data: torch.utils.data.Dataset,
-                       test_data: torch.utils.data.Dataset,
-                       num_epochs: int,
-                       device: str,
-                       num_outputs: int,
-                       batch_size: int = 32):
-    """
-    COMPONENTS WE MUST SPECIFY FOR FINETUNE:
-        - transform pipeline
-        - optimizer
-        - loss function
 
-    EVALUATION:
-        - test acc?
-        - test auc?
-    :param model:
-    :param dataset:
-    :param num_epochs:
-    :param device:
-    :param batch_size:
-    :return:
-    """
-    # finetuning or clustering
-    # number of layers, number of neurons
-    #
-    backbone = model.backbone
-    model = finetune_model(backbone, backbone.fc.out_features, num_outputs).to(device)
-    trainloader = torch.utils.data.DataLoader(train_data,
-                                             batch_size=batch_size)
-    criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-    # train #
-    for epoch in range(num_epochs):
-        for X, y in trainloader:
-            inputs, labels = X.to(device), y.to(device)
-            optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-    # evaluate #
-    testloader = torch.utils.data.DataLoader(test_data,
-                                              batch_size=batch_size)
-    model.eval()
-    y_true = torch.tensor([], dtype=torch.long).to(device)
-    pred_probs = torch.tensor([]).to(device)
-    # deactivate autograd engine
-    with torch.no_grad():
-        running_loss = 0.0
-        for X, y in testloader:
-            inputs = X.to(device)
-            labels = y.to(device)
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            running_loss += loss.item()
-            y_true = torch.cat((y_true, labels), 0)
-            pred_probs = torch.cat((pred_probs, outputs), 0)
-
-    y_true = y_true.cpu().numpy()
-    _, y_pred = torch.max(pred_probs, 1)
-    y_pred = y_pred.cpu().numpy()
-    # return acc
-    return accuracy_score(y_true, y_pred)
-
-def eval_chromosome(chromosome: list):
-    aug = gen_augmentation(chromosome)
-    features = ssl_representation(aug)
-    return finetune_features(features)
-
-class eval_finetune:
+class fitness_function:
     """
     proposed approach:
-    wrap above workflow in a classs to store global aspects of the evaluation such as
+    wrap above workflow in a class to store global aspects of the evaluation such as
     dataset and hparams
     """
     def __init__(self,
-                 dataset,
-                 backbone,
-                 ssl_method,
-                 ssl_epochs,
-                 finetune_opt,
-                 finetune_transform,
-                 finetune_epochs,
-                 finetune_loss):
-        pass
+                 dataset: str,
+                 backbone: str,
+                 ssl_task: str,
+                 ssl_epochs: int,
+                 ssl_batch_size: int,
+                 eval_method: str,
+                 device: str = "cuda"):
+        self.dataset = datasets.__dict__[dataset]()
+        self.backbone = backbone
+        self.ssl_task = pretext_task(ssl_task,
+                                    self.dataset,
+                                    self.backbone,
+                                    ssl_epochs,
+                                    ssl_batch_size,
+                                    device
+                                    )
+        self.eval = evaluate.__dict__[eval_method](self.dataset)
+        self.device = device
+
+    @staticmethod
+    def gen_augmentation_torch(chromosome: list) -> torchvision.transforms.Compose:
+        # gen augmentation
+        transform = torchvision.transforms.Compose([
+                                                 torchvision.transforms.Lambda(ops.__dict__[op](intensity=i))
+                                                 for op, i in chromosome
+                                             ] + [torchvision.transforms.ToTensor()])
+        return transform
+
+    def __call__(self, chromosome):
+        transform = self.gen_augmentation_torch(chromosome)
+        representation = self.ssl_task(transform)
+        return self.eval(representation)
 
 
 if __name__ == "__main__":
     c = chromosome.chromosome_generator()
     cc = c()
-    aug = gen_augmentation_torch(cc)
-    cifar10 = torchvision.datasets.CIFAR10("datasets/cifar10", download=True)
-    dataset = LightlyDataset.from_torch_dataset(cifar10)
-    ssl_rep = ssl_representation(aug, dataset, num_epochs=1, device="cuda")
-
-    transform = torchvision.transforms.Compose(
-        [
-            # torchvision.transforms.ToPILImage(),
-            torchvision.transforms.Lambda(lambda image: image.convert('RGB')),
-            torchvision.transforms.ToTensor(),
-            torchvision.transforms.Resize((32, 32)),
-            torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        ])
-
-    train_data = torchvision.datasets.CIFAR10("datasets/cifar10", download=True,
-                                           transform=transform, train=True)
-    test_data = torchvision.datasets.CIFAR10("datasets/cifar10", download=True,
-                                              transform=transform, train=False)
-
-
-    print("ACC: ", finetune_features(ssl_rep,
-                        train_data,
-                        test_data,
-                        num_epochs=1,
-                        device="cuda",
-                        num_outputs=10,
-                        batch_size=32))
+    fitness = fitness_function(dataset="Cifar10",
+                                 backbone="ResNet18_backbone",
+                                 ssl_task="SimCLR",
+                                 ssl_epochs=1,
+                                 ssl_batch_size=256,
+                                 eval_method="finetune",
+                                 device = "cuda")
+    print(fitness(cc))
 
 
 

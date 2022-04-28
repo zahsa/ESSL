@@ -3,7 +3,7 @@ from deap import base
 from deap import creator
 from deap import tools
 
-from chromosome import chromosome_generator
+from essl.chromosome import chromosome_generator
 import fitness
 
 def main(pop_size, fitness_function, dataset, ):

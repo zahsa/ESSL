@@ -2,7 +2,7 @@ import os
 from setuptools import setup
 
 setup(
-    name="ESSL",
+    name="essl",
     version="0.1",
     description="Pretext Task Learning and Optimization",
     author="Zahra Sadeghi, Noah Barrett",
