@@ -31,7 +31,7 @@ class Cifar10(Data):
         self.train_data = torchvision.datasets.CIFAR10("datasets/cifar10", download=True,
                                                        train = True, transform=transform.train)
         self.test_data = torchvision.datasets.CIFAR10("datasets/cifar10", download=True,
-                                                       train=True, transform=transform.test)
+                                                       train=False, transform=transform.test)
         self.ssl_data = torchvision.datasets.CIFAR10("datasets/cifar10", download=True,
-                                                       train = False)
+                                                       train = True)
         self.num_classes = 10

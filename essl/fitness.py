@@ -97,7 +97,7 @@ class fitness_function:
     def __call__(self, chromosome):
         transform = self.gen_augmentation_torch(chromosome)
         representation = self.ssl_task(transform)
-        return self.evaluate_downstream(representation)
+        return self.evaluate_downstream(representation),
 
 
 if __name__ == "__main__":
@@ -109,7 +109,7 @@ if __name__ == "__main__":
                                  ssl_epochs=1,
                                  ssl_batch_size=256,
                                  evaluate_downstream_method="finetune",
-                                 device = "cuda")
+                                 device="cuda")
     print(fitness(cc))
 
 
