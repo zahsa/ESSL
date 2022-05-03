@@ -1,6 +1,9 @@
 import ops
 import random
 
+# class chromosome:
+#     def __init__(self, operations, fitness):
+#         self.fitness
 class chromosome_generator:
     def __init__(self, augmentations=ops.DEFAULT_OPS, length=5):
         """
@@ -21,7 +24,7 @@ class chromosome_generator:
         # representation = random permutation and random intensity
         return [
             # gen a float or int based on range types
-            (k, random.uniform(*self.augmentations[k]) if isinstance(self.augmentations[k][0], float) else random.randint(*self.augmentations[k]))
+            [k, random.uniform(*self.augmentations[k]) if isinstance(self.augmentations[k][0], float) else random.randint(*self.augmentations[k])]
             for k in random.sample(list(self.augmentations.keys()), self.length)
         ]
 

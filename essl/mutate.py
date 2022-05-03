@@ -3,7 +3,18 @@ perturbation of intensities
     - must remain within the feasible space
     - pre or post
 """
+
+
 from essl.ops import DEFAULT_OPS
+import math
+import random
+
+from itertools import repeat
+
+try:
+    from collections.abc import Sequence
+except ImportError:
+    from collections import Sequence
 
 class MutateOperators:
 
@@ -29,7 +40,7 @@ class MutateOperators:
 
 
 
-def mutGaussian(individual, mu, sigma, indpb):
+def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05):
     """
     DIrectly modified from source code to work with our chromosomes
 
@@ -59,7 +70,7 @@ def mutGaussian(individual, mu, sigma, indpb):
     elif len(sigma) < size:
         raise IndexError("sigma must be at least the size of individual: %d < %d" % (len(sigma), size))
 
-    for i, m, s in zip(xrange(size), mu, sigma):
+    for i, m, s in zip(range(size), mu, sigma):
         if random.random() < indpb:
             update = individual[i][1] + random.gauss(m, s)
             # max out range
