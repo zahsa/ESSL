@@ -2,11 +2,25 @@ import numpy as np
 from torch import nn
 import torchvision
 import torch
-
+import torch.optim as optim
 from lightly.data import LightlyDataset
 from lightly.data import SimCLRCollateFunction, BaseCollateFunction
 from lightly.loss import NTXentLoss
 from lightly.models.modules import SimCLRProjectionHead
+from functools import partial
+import PIL
+import pandas as pd
+import os
+from sklearn.metrics import accuracy_score
+
+from essl import ops
+from essl import chromosome
+from essl import pretext_selection
+from essl import backbones
+from essl import losses
+from essl import datasets
+from essl import evaluate_downstream
+import time
 
 def dummy_eval(chromosome):
     """
@@ -18,88 +32,89 @@ def dummy_eval(chromosome):
     opt = list(range(len(permutation)))
     return sum(np.array(opt) == np.array(permutation))
 
-def gen_augmentation(chromosome: list) -> torchvision.transforms.Compose:
-    # gen augmentation
-    # dataloader(augmentation)
-    return
+class pretext_task:
+    def __init__(self,
+                 method: str,
+                 dataset: datasets.Data,
+                 backbone: str,
+                 num_epochs: int,
+                 batch_size: int,
+                 device: str):
+        self.dataset = LightlyDataset.from_torch_dataset(dataset.ssl_data)
+        self.backbone = backbones.__dict__[backbone]
+        self.model = pretext_selection.__dict__[method]
+        self.num_epochs = num_epochs
+        self.batch_size = batch_size
+        self.device = device
 
 
 
-class SimCLR(nn.Module):
-    def __init__(self, backbone, in_features):
-        super().__init__()
+    def __call__(self, transform):
+        model = self.model(self.backbone())
+        model.fit(transform,
+                  self.dataset,
+                  self.batch_size,
+                  self.num_epochs,
+                  self.device)
+        return model
+
+
+
+class fitness_function:
+    """
+    proposed approach:
+    wrap above workflow in a class to store global aspects of the evaluation such as
+    dataset and hparams
+    """
+    def __init__(self,
+                 dataset: str,
+                 backbone: str,
+                 ssl_task: str,
+                 ssl_epochs: int,
+                 ssl_batch_size: int,
+                 evaluate_downstream_method: str,
+                 device: str = "cuda"):
+        self.dataset = datasets.__dict__[dataset]()
         self.backbone = backbone
-        self.projection_head = SimCLRProjectionHead(in_features, 512, 128)
+        self.ssl_task = pretext_task(ssl_task,
+                                    self.dataset,
+                                    self.backbone,
+                                    ssl_epochs,
+                                    ssl_batch_size,
+                                    device
+                                    )
+        self.evaluate_downstream = evaluate_downstream.__dict__[evaluate_downstream_method](self.dataset)
+        self.device = device
 
-    def forward(self, x):
-        x = self.backbone(x).flatten(start_dim=1)
-        z = self.projection_head(x)
-        return z
+    @staticmethod
+    def gen_augmentation_torch(chromosome: list) -> torchvision.transforms.Compose:
+        # gen augmentation
+        transform = torchvision.transforms.Compose([
+                                                 torchvision.transforms.Lambda(ops.__dict__[op](intensity=i))
+                                                 for op, i in chromosome
+                                             ] + [torchvision.transforms.ToTensor()])
+        return transform
 
-class finetune_model(nn.Module):
-    def __init__(self, backbone, in_features):
-        super().__init__()
-        self.backbone = backbone
-        self.classifier = torch.nn.Sequential(
-            torch.nn.Linear(in_features=self.cin_features, out_features=num_outputs, bias=True),
-        )
-
-
-
-def ssl_representation(aug,dataset, num_epochs, device):
-    # return features
-    # model
-    # call ssl training
-    # different ssl algorithms
-    backbone = torchvision.models.resnet18()
-    model = SimCLR(backbone, in_features=backbone.fc.in_features)
-
-    # custom colate function -> basecollate
-    collate_fn = BaseCollateFunction(aug)
-    dataloader = torch.utils.data.DataLoader(
-        dataset,
-        batch_size=256,
-        collate_fn=collate_fn,
-        shuffle=True,
-        drop_last=True,
-        num_workers=8,
-    )
-    criterion = NTXentLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.06)
-    losses = []
-    print("Starting Training")
-    for epoch in range(num_epochs):
-        total_loss = 0
-        for (x0, x1), _, _ in dataloader:
-            x0 = x0.to(device)
-            x1 = x1.to(device)
-            z0 = model(x0)
-            z1 = model(x1)
-            loss = criterion(z0, z1)
-            total_loss += loss.detach()
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-        avg_loss = total_loss / len(dataloader)
-        print(f"epoch: {epoch:>02}, loss: {avg_loss:.5f}")
-        losses.append(float(avg_loss))
+    def __call__(self, chromosome):
+        t1 = time.time()
+        transform = self.gen_augmentation_torch(chromosome)
+        representation = self.ssl_task(transform)
+        fitness = self.evaluate_downstream(representation),
+        print("time to eval: ", time.time() - t1)
+        return fitness
 
 
-
-
-
-def finetune_features(model):
-    # finetuning or clustering
-    # number of layers, number of neurons
-    #
-    backbone = model.backbone
-    return
-
-def eval_chromosome(chromosome: list):
-    aug = gen_augmentation(chromosome)
-    features = ssl_representation(aug)
-    return finetune_features(features)
-
+if __name__ == "__main__":
+    c = chromosome.chromosome_generator()
+    cc = c()
+    fitness = fitness_function(dataset="Cifar10",
+                                 backbone="ResNet18_backbone",
+                                 ssl_task="SimCLR",
+                                 ssl_epochs=1,
+                                 ssl_batch_size=256,
+                                 evaluate_downstream_method="finetune",
+                                 device="cuda")
+    print(fitness(cc))
 
 
 
