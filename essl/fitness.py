@@ -84,6 +84,7 @@ class fitness_function:
                                     device
                                     )
         self.evaluate_downstream = evaluate_downstream.__dict__[evaluate_downstream_method](self.dataset)
+        self.downstream_losses = {}
         self.device = device
 
     @staticmethod
@@ -95,13 +96,18 @@ class fitness_function:
                                              ] + [torchvision.transforms.ToTensor()])
         return transform
 
+    def clear_downstream_losses(self):
+        self.downstream_losses = {}
+
     def __call__(self, chromosome):
         t1 = time.time()
         transform = self.gen_augmentation_torch(chromosome)
         representation = self.ssl_task(transform)
-        fitness = self.evaluate_downstream(representation),
+        loss, fitness = self.evaluate_downstream(representation)
+        # store the losses with id of chromosome
+        self.downstream_losses[chromosome.id] = loss
         print("time to eval: ", time.time() - t1)
-        return fitness
+        return fitness,
 
 
 if __name__ == "__main__":
@@ -115,6 +121,8 @@ if __name__ == "__main__":
                                  evaluate_downstream_method="finetune",
                                  device="cuda")
     print(fitness(cc))
+    import pdb;
+    pdb.set_trace()
 
 
 

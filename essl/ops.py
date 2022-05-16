@@ -17,7 +17,7 @@ DEFAULT_OPS = {
     "TranslateX":[0, int(150 / 331.0 * 32)],
     "Rotate":[-30, 30],
     "Color":[0.1, 1.9],
-    "Posterize":[4, 8],
+    # "Posterize":[4, 8],
     "Solarize":[0, 1],
     "Contrast":[0.1,1.9],
     "Sharpness":[0.1, 1.9],

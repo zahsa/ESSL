@@ -23,7 +23,7 @@ class finetune:
     def __init__(self,
                     dataset: datasets.Data,
                     opt: str = "SGD",
-                    num_epochs: int = 5,
+                    num_epochs: int = 10,
                     loss: str = "CrossEntropyLoss",
                     batch_size: int = 32,
                     device: str = "cuda"):
@@ -41,14 +41,18 @@ class finetune:
         criterion = self.loss
         optimizer = self.opt(model)
         # train #
+        losses = []
         for epoch in range(self.num_epochs):
+            running_loss = 0.0
             for X, y in trainloader:
                 inputs, labels = X.to(self.device), y.to(self.device)
                 optimizer.zero_grad()
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
+                running_loss+=loss.item()
                 loss.backward()
                 optimizer.step()
+            losses.append(running_loss/len(trainloader))
         # evaluate #
         testloader = torch.utils.data.DataLoader(self.dataset.test_data,
                                                  batch_size=self.batch_size)
@@ -71,6 +75,6 @@ class finetune:
         _, y_pred = torch.max(pred_probs, 1)
         y_pred = y_pred.cpu().numpy()
         # return acc
-        return accuracy_score(y_true, y_pred)
+        return losses, accuracy_score(y_true, y_pred)
 
 
