@@ -1,20 +1,9 @@
 import random
 
-def PMX(s, t):
-    """
-    create mapping based on augmentation operator itself,
-    does not consider intensity
-    :param s:
-    :param t:
-    :return:
-    """
-    _map1 = {}
-    _map2 = {}
 
-
-    size = min([len(s), len(t)])
-    values1 = { s[i][0]: s[i] for i in range(size) }
-    values2 = { t[i][0]: t[i] for i in range(size) }
+def PMX_inner(s, t, size, values1, values2):
+    _map1 = { }
+    _map2 = { }
     # choose two crossover points
     x1 = random.randint(0, size-1)
     x2 = random.randint(x1+1, size)
@@ -41,6 +30,25 @@ def PMX(s, t):
             offspring[0][i] = values1[_map1[offspring[0][i][0]]]
         while offspring[1][i][0] in _map2:
             offspring[1][i] = values2[_map2[offspring[1][i][0]]]
+
+    return offspring
+def PMX(s, t):
+    """
+    create mapping based on augmentation operator itself,
+    does not consider intensity
+    :param s:
+    :param t:
+    :return:
+    """
+
+    size = min([len(s), len(t)])
+    values1 = { s[i][0]: s[i] for i in range(size) }
+    values2 = { t[i][0]: t[i] for i in range(size) }
+    offspring = PMX_inner(s, t, size, values1, values2)
+    # feasibility check
+    parents = [s,t]
+    while offspring[0] in parents or offspring[1] in parents or offspring[0] == offspring[1]:
+        offspring = PMX_inner(s, t, size, values1, values2)
 
     return offspring
 
