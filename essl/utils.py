@@ -29,3 +29,14 @@ def visualize_chromosomes(save_path, num_samples=5):
         augmented_im.save(os.path.join(save_path, f"{i}.jpg"))
     df = pd.DataFrame(chromosomes, columns=[f"op{i}" for i in range(len(chromosomes[0]))])
     df.to_csv(os.path.join(save_path, "chromosomes.csv"))
+
+def id_generator() -> int:
+    """
+    simple generator to generate undefined number of unique,
+    sequential ids
+    :yield: unique id
+    """
+    id = -1
+    while True:
+        id += 1
+        yield id

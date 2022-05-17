@@ -1,4 +1,4 @@
-import ops
+from essl import ops
 import random
 
 
