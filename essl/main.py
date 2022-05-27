@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import os
 from tensorboardX import SummaryWriter
 from datetime import datetime
+import pandas as pd
 sns.set_theme()
 
 
@@ -23,6 +24,7 @@ from essl.utils import id_generator
 @click.option("--num_generations",type=int, help="number of generations")
 @click.option("--cxpb", default=0.2,type=float, help="probability of crossover")
 @click.option("--mutpb", default=0.5,type=float, help="probability of mutation")
+@click.option("--crossover", default="PMX",type=str, help="typer of crossover (PMX, twopoint)")
 @click.option("--dataset", default="Cifar10",type=str, help="data set to use (Cifar10, )")
 @click.option("--backbone", default="ResNet18_backbone",type=str, help="backbone to use (ResNet18_backbone, TinyCNN_backbone)")
 @click.option("--ssl_task", default="SimCLR", type=str, help="SSL method (SimCLR)")
@@ -33,9 +35,11 @@ from essl.utils import id_generator
 @click.option("--exp_dir", default="./", type=str, help="path to save experiment results")
 @click.option("--use_tensorboard", default=True, type=bool, help="whether to use tensorboard or not")
 @click.option("--save_plots", default=True, type=bool, help="whether to save plots or not")
+@click.option("--chromosome_length", default=5, type=int, help="number of genes in chromosome")
 def main_cli(pop_size, num_generations,
                              cxpb,
                              mutpb,
+                             crossover,
                              dataset,
                              backbone,
                              ssl_task,
@@ -45,11 +49,13 @@ def main_cli(pop_size, num_generations,
                              device,
                              exp_dir,
                              use_tensorboard,
-                             save_plots):
+                             save_plots,
+                                chromosome_length):
     main(pop_size=pop_size,
          num_generations=num_generations,
          cxpb=cxpb,
          mutpb=mutpb,
+         crossover=crossover,
          dataset=dataset,
          backbone=backbone,
          ssl_task=ssl_task,
@@ -59,22 +65,26 @@ def main_cli(pop_size, num_generations,
          device=device,
          exp_dir=exp_dir,
          use_tensorboard=use_tensorboard,
-         save_plots=save_plots)
+         save_plots=save_plots,
+         chromosome_length=chromosome_length)
 
 
 def main(pop_size, num_generations,
                              cxpb =  0.2,
                              mutpb = 0.5,
+                             crossover = "PMX",
                              dataset="Cifar10",
-                             backbone="ResNet18_backbone",
+                             backbone="tinyCNN_backbone",
                              ssl_task="SimCLR",
                              ssl_epochs=1,
                              ssl_batch_size=256,
                              evaluate_downstream_method="finetune",
+                             evaluate_downstream_kwargs={},
                              device="cuda",
                              exp_dir="./",
                              use_tensorboard=True,
-                             save_plots=True):
+                             save_plots=True,
+                             chromosome_length=5):
 
     if use_tensorboard:
         tb_dir = os.path.join(exp_dir, "tensorboard")
@@ -88,7 +98,7 @@ def main(pop_size, num_generations,
     toolbox = base.Toolbox()
     creator.create("Fitness", base.Fitness, weights=(-1.0,)) # minimize loss
     creator.create("Individual", list, fitness=creator.Fitness, id=None)
-    toolbox.register("gen_aug", chromosome_generator())
+    toolbox.register("gen_aug", chromosome_generator(length=chromosome_length))
     toolbox.register("individual", tools.initIterate, creator.Individual,
                      toolbox.gen_aug)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
@@ -98,9 +108,15 @@ def main(pop_size, num_generations,
                                      ssl_epochs=ssl_epochs,
                                      ssl_batch_size=ssl_batch_size,
                                      evaluate_downstream_method=evaluate_downstream_method,
+                                     evaluate_downstream_kwargs=evaluate_downstream_kwargs,
                                      device=device)
     toolbox.register("evaluate", eval)
-    toolbox.register("mate", PMX)
+    if crossover == "PMX":
+        toolbox.register("mate", PMX)
+    elif crossover == "twopoint":
+        toolbox.register("mate", tools.cxTwoPoint)
+    else:
+        raise ValueError(f"invalid crossover ({crossover})")
     toolbox.register("mutate", mutate.mutGaussian, indpb=0.05)
     toolbox.register("select", tools.selTournament, tournsize=3)
 
@@ -115,6 +131,7 @@ def main(pop_size, num_generations,
     for ind, fit in zip(pop, fitnesses):
         ind.fitness.values = fit
     outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std"]}
+
     # evolution loop
     for g in range(num_generations):
         print("-- Generation %i --" % g)
@@ -192,7 +209,7 @@ def main(pop_size, num_generations,
         outcomes["max"].append(max_f)
         outcomes["avg"].append(mean)
         outcomes["std"].append(std)
-        outcomes["pop_vals"].append(fits)
+        outcomes["pop_vals"]+=[[g, f] for f in fits]
 
     if save_plots:
         plot_dir = os.path.join(exp_dir, "plots")
@@ -200,8 +217,7 @@ def main(pop_size, num_generations,
             os.mkdir(plot_dir)
         for m in outcomes:
             if m == "pop_vals":
-                for g in outcomes[m]:
-                    sns.lineplot(list(range(len(g))), g)
+                sns.boxplot(data=pd.DataFrame(outcomes[m], columns=["gen", "fitness"]), x="gen", y="fitness")
                 plt.savefig(os.path.join(plot_dir, f"{m}.png"))
                 plt.clf()
             else:
@@ -214,9 +230,12 @@ def main(pop_size, num_generations,
 if __name__ == "__main__":
     import time
     t1 = time.time()
-    main(pop_size=5,
-         ssl_epochs=5,
-         num_generations=5,
+    main(pop_size=4,
+         ssl_epochs=1,
+         num_generations=2,
          backbone="tinyCNN_backbone",
-         exp_dir="/home/noah/ESSL/experiments/test_2")
+         exp_dir="/home/noah/ESSL/experiments/test_3",
+         evaluate_downstream_kwargs={"num_epochs":1},
+         crossover="PMX"
+         )
     print(f"TOOK {time.time()-t1} to run")
