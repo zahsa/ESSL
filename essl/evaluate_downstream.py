@@ -8,18 +8,28 @@ from tqdm import tqdm
 from tensorboardX import SummaryWriter
 from datetime import datetime
 import os
+import torch.nn.functional as F
 
 from essl import optimizers
 from essl import losses
 from essl import datasets
 
 class finetune_model(nn.Module):
-    def __init__(self, backbone, in_features, num_outputs):
+    def __init__(self, backbone, in_features, num_outputs, linear=False):
         super().__init__()
         self.backbone = backbone
-        self.classifier = torch.nn.Sequential(
-            torch.nn.Linear(in_features=in_features, out_features=num_outputs, bias=True),
-        )
+        if linear:
+            self.classifier = torch.nn.Sequential(
+                torch.nn.Linear(in_features=in_features, out_features=num_outputs, bias=True),
+            )
+        else:
+            self.classifier = torch.nn.Sequential(
+                torch.nn.Linear(in_features=in_features, out_features=1024, bias=True),
+                torch.nn.ReLU(),
+                torch.nn.Linear(in_features=1024, out_features=512, bias=True),
+                torch.nn.ReLU(),
+                nn.Linear(512, num_outputs)
+            )
     def forward(self, x):
         x = self.backbone(x).flatten(start_dim=1)
         x = self.classifier(x)
@@ -39,7 +49,8 @@ class finetune:
                     device: str = "cuda",
                     verbose: bool = False,
                     tensorboard_dir: str = None,
-                    use_scheduler: bool = False):
+                    use_scheduler: bool = False,
+                    split_seed: int = 10):
         self.dataset = dataset
         self.opt = optimizers.__dict__[opt]
         self.num_epochs = num_epochs
@@ -47,6 +58,7 @@ class finetune:
         self.batch_size = batch_size
         self.device = device
         self.verbose = verbose
+        self.split_seed = split_seed
         if tensorboard_dir:
             if not os.path.isdir(tensorboard_dir):
                 os.mkdir(tensorboard_dir)
