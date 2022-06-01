@@ -20,8 +20,7 @@ def PMX_inner(s, t, size, values1, values2):
     for i in range(0, x1):
         while offspring[0][i][0] in _map1:
             offspring[0][i] = values1[_map1[offspring[0][i][0]]]
-
-        while offspring[1][i][0]  in _map2:
+        while offspring[1][i][0] in _map2:
             offspring[1][i] = values2[_map2[offspring[1][i][0]]]
 
     # check after the swap
@@ -30,8 +29,8 @@ def PMX_inner(s, t, size, values1, values2):
             offspring[0][i] = values1[_map1[offspring[0][i][0]]]
         while offspring[1][i][0] in _map2:
             offspring[1][i] = values2[_map2[offspring[1][i][0]]]
-
     return offspring
+
 def PMX(s, t):
     """
     create mapping based on augmentation operator itself,
@@ -48,6 +47,7 @@ def PMX(s, t):
     # feasibility check
     parents = [s,t]
     while offspring[0] in parents or offspring[1] in parents or offspring[0] == offspring[1]:
+        import pdb;pdb.set_trace()
         offspring = PMX_inner(s, t, size, values1, values2)
 
     return offspring

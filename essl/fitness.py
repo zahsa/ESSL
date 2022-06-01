@@ -73,7 +73,9 @@ class fitness_function:
                  ssl_epochs: int,
                  ssl_batch_size: int,
                  evaluate_downstream_method: str,
-                 device: str = "cuda"):
+                 evaluate_downstream_kwargs: dict = {},
+                 device: str = "cuda",
+                 seed: int=10):
         self.dataset = datasets.__dict__[dataset]()
         self.backbone = backbone
         self.ssl_task = pretext_task(ssl_task,
@@ -83,9 +85,14 @@ class fitness_function:
                                     ssl_batch_size,
                                     device
                                     )
-        self.evaluate_downstream = evaluate_downstream.__dict__[evaluate_downstream_method](self.dataset)
+        self.evaluate_downstream = evaluate_downstream.__dict__[evaluate_downstream_method](self.dataset, **evaluate_downstream_kwargs)
         self.downstream_losses = {}
         self.device = device
+        self.seed = seed
+        # set seed
+        torch.cuda.manual_seed_all(self.seed)
+        torch.cuda.manual_seed(self.seed)
+        torch.manual_seed(self.seed)
 
     @staticmethod
     def gen_augmentation_torch(chromosome: list) -> torchvision.transforms.Compose:
@@ -113,14 +120,17 @@ class fitness_function:
 if __name__ == "__main__":
     c = chromosome.chromosome_generator()
     cc = c()
+    print("seed: ", torch.seed())
     fitness = fitness_function(dataset="Cifar10",
-                                 backbone="ResNet18_backbone",
+                                 backbone="tinyCNN_backbone",
                                  ssl_task="SimCLR",
                                  ssl_epochs=1,
                                  ssl_batch_size=256,
                                  evaluate_downstream_method="finetune",
                                  device="cuda")
+    print("seed: ", torch.cuda.seed())
     print(fitness(cc))
+    print("seed: ", torch.cuda.seed())
     import pdb;
     pdb.set_trace()
 
