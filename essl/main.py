@@ -10,7 +10,7 @@ from tensorboardX import SummaryWriter
 from datetime import datetime
 import pandas as pd
 sns.set_theme()
-
+import copy
 
 from essl.chromosome import chromosome_generator
 from essl import fitness
@@ -26,7 +26,7 @@ from essl.utils import id_generator
 @click.option("--mutpb", default=0.5,type=float, help="probability of mutation")
 @click.option("--crossover", default="PMX",type=str, help="typer of crossover (PMX, twopoint)")
 @click.option("--dataset", default="Cifar10",type=str, help="data set to use (Cifar10, )")
-@click.option("--backbone", default="ResNet18_backbone",type=str, help="backbone to use (ResNet18_backbone, TinyCNN_backbone)")
+@click.option("--backbone", default="ResNet18_backbone",type=str, help="backbone to use (ResNet18_backbone, tinyCNN_backbone, largerCNN_backbone)")
 @click.option("--ssl_task", default="SimCLR", type=str, help="SSL method (SimCLR)")
 @click.option("--ssl_epochs", default=10, type=int, help="number of epochs for ssl task")
 @click.option("--ssl_batch_size", default=256, type=int, help="batch size for ssl task")
@@ -50,7 +50,7 @@ def main_cli(pop_size, num_generations,
                              exp_dir,
                              use_tensorboard,
                              save_plots,
-                                chromosome_length):
+                             chromosome_length):
     main(pop_size=pop_size,
          num_generations=num_generations,
          cxpb=cxpb,
@@ -84,7 +84,12 @@ def main(pop_size, num_generations,
                              exp_dir="./",
                              use_tensorboard=True,
                              save_plots=True,
-                             chromosome_length=5):
+                             chromosome_length=5,
+                             seed=10,
+                             num_elite=2):
+
+    # set seeds #
+    random.seed(seed)
 
     if use_tensorboard:
         tb_dir = os.path.join(exp_dir, "tensorboard")
@@ -96,9 +101,9 @@ def main(pop_size, num_generations,
 
     # init algo #
     toolbox = base.Toolbox()
-    creator.create("Fitness", base.Fitness, weights=(-1.0,)) # minimize loss
+    creator.create("Fitness", base.Fitness, weights=(100.0,)) # maximize accuracy
     creator.create("Individual", list, fitness=creator.Fitness, id=None)
-    toolbox.register("gen_aug", chromosome_generator(length=chromosome_length))
+    toolbox.register("gen_aug", chromosome_generator(length=chromosome_length, seed=seed))
     toolbox.register("individual", tools.initIterate, creator.Individual,
                      toolbox.gen_aug)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
@@ -109,7 +114,8 @@ def main(pop_size, num_generations,
                                      ssl_batch_size=ssl_batch_size,
                                      evaluate_downstream_method=evaluate_downstream_method,
                                      evaluate_downstream_kwargs=evaluate_downstream_kwargs,
-                                     device=device)
+                                     device=device,
+                                     seed=seed)
     toolbox.register("evaluate", eval)
     if crossover == "PMX":
         toolbox.register("mate", PMX)
@@ -129,7 +135,7 @@ def main(pop_size, num_generations,
 
     fitnesses = list(map(toolbox.evaluate, pop))
     for ind, fit in zip(pop, fitnesses):
-        ind.fitness.values = fit
+       ind.fitness.values = fit,
     outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std"]}
 
     # evolution loop
@@ -139,9 +145,16 @@ def main(pop_size, num_generations,
         offspring = toolbox.select(pop, len(pop))
         # Clone the selected individuals
         offspring = list(map(toolbox.clone, offspring))
+
+        # sort offspring in descending order
+        offspring.sort(key=lambda x: x.fitness.values[0], reverse=True)
+        elite = offspring[:num_elite]
+        non_elite = offspring[num_elite:]
+        nons = list(non_elite)
+        import pdb;pdb.set_trace()
         # Apply crossover and mutation on the offspring
         # split list in two
-        for child1, child2 in zip(offspring[::2], offspring[1::2]):
+        for child1, child2 in zip(non_elite[::2], non_elite[1::2]):
             if random.random() < cxpb:
                 toolbox.mate(child1, child2)
                 # generate new ids for children
@@ -150,12 +163,15 @@ def main(pop_size, num_generations,
                 del child1.fitness.values
                 del child2.fitness.values
 
-        for mutant in offspring:
+        for mutant in non_elite:
             if random.random() < mutpb:
                 toolbox.mutate(mutant)
                 # generate new id for mutant
                 mutant.id = next(id_gen)
                 del mutant.fitness.values
+
+        # combine non elite and elite
+        offspring = elite + non_elite
 
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]

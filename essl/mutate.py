@@ -40,7 +40,7 @@ class MutateOperators:
 
 
 
-def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05):
+def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10):
     """
     DIrectly modified from source code to work with our chromosomes
 
@@ -60,6 +60,7 @@ def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05):
     This function uses the :func:`~random.random` and :func:`~random.gauss`
     functions from the python base :mod:`random` module.
     """
+    random.seed(10)
     size = len(individual)
     if not isinstance(mu, Sequence):
         mu = repeat(mu, size)

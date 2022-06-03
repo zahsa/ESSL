@@ -33,10 +33,6 @@ class finetune_model(nn.Module):
     def forward(self, x):
         x = self.backbone(x).flatten(start_dim=1)
         x = self.classifier(x)
-        # x = self.backbone(x)
-        # x = F.avg_pool2d(x, 4)
-        # x = x.view(x.size(0), -1)
-        # x = self.classifier(x)
         return x
 
 class finetune:
@@ -50,7 +46,7 @@ class finetune:
                     verbose: bool = False,
                     tensorboard_dir: str = None,
                     use_scheduler: bool = False,
-                    split_seed: int = 10):
+                    seed: int = 10):
         self.dataset = dataset
         self.opt = optimizers.__dict__[opt]
         self.num_epochs = num_epochs
@@ -58,7 +54,12 @@ class finetune:
         self.batch_size = batch_size
         self.device = device
         self.verbose = verbose
-        self.split_seed = split_seed
+        self.seed = seed
+        # set seeds #
+        torch.cuda.manual_seed_all(self.seed)
+        torch.cuda.manual_seed(self.seed)
+        torch.manual_seed(self.seed)
+
         if tensorboard_dir:
             if not os.path.isdir(tensorboard_dir):
                 os.mkdir(tensorboard_dir)
