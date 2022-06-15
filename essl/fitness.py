@@ -39,7 +39,10 @@ class pretext_task:
                  backbone: str,
                  num_epochs: int,
                  batch_size: int,
-                 device: str):
+                 device: str,
+                 seed: int=10
+                 ):
+        self.seed = seed
         self.dataset = LightlyDataset.from_torch_dataset(dataset.ssl_data)
         self.backbone = backbones.__dict__[backbone]
         self.model = pretext_selection.__dict__[method]
@@ -50,13 +53,14 @@ class pretext_task:
 
 
     def __call__(self, transform):
-        model = self.model(self.backbone())
-        model.fit(transform,
+        model = self.model(self.backbone(self.seed))
+        loss = model.fit(transform,
                   self.dataset,
                   self.batch_size,
                   self.num_epochs,
                   self.device)
-        return model
+        return model, loss
+
 
 
 
@@ -76,23 +80,30 @@ class fitness_function:
                  evaluate_downstream_kwargs: dict = {},
                  device: str = "cuda",
                  seed: int=10):
-        self.dataset = datasets.__dict__[dataset]()
-        self.backbone = backbone
-        self.ssl_task = pretext_task(ssl_task,
-                                    self.dataset,
-                                    self.backbone,
-                                    ssl_epochs,
-                                    ssl_batch_size,
-                                    device
-                                    )
-        self.evaluate_downstream = evaluate_downstream.__dict__[evaluate_downstream_method](self.dataset, **evaluate_downstream_kwargs)
-        self.downstream_losses = {}
-        self.device = device
+
+        # set seeds #
         self.seed = seed
-        # set seed
         torch.cuda.manual_seed_all(self.seed)
         torch.cuda.manual_seed(self.seed)
         torch.manual_seed(self.seed)
+
+        self.dataset = datasets.__dict__[dataset](seed=seed)
+        self.backbone = backbone
+        self.ssl_task = pretext_task(method=ssl_task,
+                                    dataset=self.dataset,
+                                    backbone=self.backbone,
+                                    num_epochs=ssl_epochs,
+                                    batch_size=ssl_batch_size,
+                                    device=device,
+                                    seed=self.seed
+                                    )
+        self.evaluate_downstream = evaluate_downstream.__dict__[evaluate_downstream_method](dataset=self.dataset,
+                                                                                             seed=seed,
+                                                                                            **evaluate_downstream_kwargs)
+        self.downstream_losses = {}
+        self.device = device
+
+
 
     @staticmethod
     def gen_augmentation_torch(chromosome: list) -> torchvision.transforms.Compose:
@@ -106,15 +117,18 @@ class fitness_function:
     def clear_downstream_losses(self):
         self.downstream_losses = {}
 
-    def __call__(self, chromosome):
+    def __call__(self, chromosome, return_losses=False):
         t1 = time.time()
         transform = self.gen_augmentation_torch(chromosome)
-        representation = self.ssl_task(transform)
-        loss, fitness = self.evaluate_downstream(representation)
-        # store the losses with id of chromosome
-        self.downstream_losses[chromosome.id] = loss
+        representation, ssl_losses = self.ssl_task(transform)
+        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation, report_all_metrics=True)
         print("time to eval: ", time.time() - t1)
-        return fitness,
+        if return_losses:
+            return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
+        else:
+            # store the losses with id of chromosome
+            self.downstream_losses[chromosome.id] = train_losses
+            return test_acc,
 
 
 if __name__ == "__main__":
@@ -122,14 +136,14 @@ if __name__ == "__main__":
     cc = c()
     print("seed: ", torch.seed())
     fitness = fitness_function(dataset="Cifar10",
-                                 backbone="tinyCNN_backbone",
-                                 ssl_task="SimCLR",
+                                 backbone="largerCNN_backbone",
+                                 ssl_task="SwaV",
                                  ssl_epochs=1,
-                                 ssl_batch_size=256,
+                                 ssl_batch_size=64,
                                  evaluate_downstream_method="finetune",
                                  device="cuda")
     print("seed: ", torch.cuda.seed())
-    print(fitness(cc))
+    print(fitness(cc, return_losses=True))
     print("seed: ", torch.cuda.seed())
     import pdb;
     pdb.set_trace()

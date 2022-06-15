@@ -13,8 +13,10 @@ import random
 import math
 
 DEFAULT_OPS = {
-    "ShearX":[-0.3, 0.3],
+    "ShearX":[0.0, 0.3],
+    "ShearY":[0.0, 0.3],
     "TranslateX":[0, int(150 / 331.0 * 32)],
+    "TranslateY":[0, int(150 / 331.0 * 32)],
     "Rotate":[-30, 30],
     "Color":[0.1, 1.9],
     # "Posterize":[4, 8],

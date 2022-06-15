@@ -6,11 +6,15 @@ from copy import copy
 
 from torch.utils.data import random_split
 class Data:
-    def __init__(self):
+    def __init__(self, seed=10):
         self.train_data = None
         self.test_data = None
         self.ssl_data = None
         self.num_classes = None
+        # set seeds #
+        torch.cuda.manual_seed_all(seed)
+        torch.cuda.manual_seed(seed)
+        torch.manual_seed(seed)
 
 class DatasetFromSubset(torch.utils.data.Dataset):
     def __init__(self, subset, transform=None):
@@ -64,14 +68,16 @@ class Cifar10_aug:
         ])
 
 class Cifar10(Data):
-    def __init__(self, transform=Cifar10_aug(), split_seed=None):
+    def __init__(self, transform=Cifar10_aug(), seed=10):
+        super().__init__(seed=seed)
         self.train_data = torchvision.datasets.CIFAR10("datasets/cifar10", download=True,
                                                        train = True, transform=transform.train)
-        if split_seed:
+        if seed:
             self.train_data, self.val_data = random_split(self.train_data,
                                                                [int(len(self.train_data)*0.9), len(self.train_data) - int(len(self.train_data)*0.9)],
-                                                               generator=torch.Generator().manual_seed(split_seed))
-            # self.val_data = DatasetFromSubset(self.val_data, transform.val)
+                                                               generator=torch.Generator().manual_seed(seed))
+
+
 
         else:
             self.val_data = torchvision.datasets.CIFAR10("datasets/cifar10", download=True,
