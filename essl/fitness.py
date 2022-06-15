@@ -121,10 +121,10 @@ class fitness_function:
         t1 = time.time()
         transform = self.gen_augmentation_torch(chromosome)
         representation, ssl_losses = self.ssl_task(transform)
-        train_losses, train_accs, val_losses, val_accs, test_acc = self.evaluate_downstream(representation, report_all_metrics=True)
+        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation, report_all_metrics=True)
         print("time to eval: ", time.time() - t1)
         if return_losses:
-            return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc
+            return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
         else:
             # store the losses with id of chromosome
             self.downstream_losses[chromosome.id] = train_losses

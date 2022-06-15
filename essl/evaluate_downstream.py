@@ -173,17 +173,22 @@ class finetune:
         # pred_probs = torch.tensor([]).to(self.device)
         total = 0
         correct = 0
+        running_loss = 0.0
         # deactivate autograd engine
         with torch.no_grad():
             for X, y in testloader:
                 inputs = X.to(self.device)
                 labels = y.to(self.device)
                 outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                running_loss += loss.item()
                 # y_true = torch.cat((y_true, labels), 0)
                 # pred_probs = torch.cat((pred_probs, outputs), 0)
                 _, predicted = outputs.max(1)
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
+            test_loss = running_loss / len(testloader)
+
 
         # y_true = y_true.cpu().numpy()
         # _, y_pred = torch.max(pred_probs, 1)
@@ -191,7 +196,7 @@ class finetune:
         test_acc = 100.*correct/total
 
         if report_all_metrics:
-            return train_losses, train_accs, val_losses, val_accs, test_acc
+            return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
 
         return train_losses, test_acc
 

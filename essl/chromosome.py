@@ -1,5 +1,6 @@
 from essl import ops
 import random
+from itertools import permutations
 
 
 class chromosome_generator:
@@ -19,6 +20,21 @@ class chromosome_generator:
             i: a for i, a in enumerate(self.augmentations)
         }
 
+    @property
+    def search_space(self):
+        return permutations(self.augmentations, self.length)
+
+    def gen_search_space(self):
+        return [
+                    [
+                        [k, random.uniform(*self.augmentations[k])
+                            if isinstance(self.augmentations[k][0], float)
+                            else random.randint(*self.augmentations[k])]
+                            for k in chromo
+                    ]
+                for chromo in self.search_space
+        ]
+
     def __call__(self):
         # representation = random permutation and random intensity
         return [
@@ -26,7 +42,7 @@ class chromosome_generator:
             [k, random.uniform(*self.augmentations[k])
                         if isinstance(self.augmentations[k][0], float)
                         else random.randint(*self.augmentations[k])]
-            for k in random.sample(list(self.augmentations.keys()), self.length)
+            for k in random.sample(list(self.augmentations), self.length)
         ]
 
 

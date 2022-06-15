@@ -135,7 +135,7 @@ def main(pop_size, num_generations,
 
     fitnesses = list(map(toolbox.evaluate, pop))
     for ind, fit in zip(pop, fitnesses):
-       ind.fitness.values = fit,
+       ind.fitness.values = fit
     outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std"]}
 
     # evolution loop
@@ -147,14 +147,13 @@ def main(pop_size, num_generations,
         offspring = list(map(toolbox.clone, offspring))
 
         # sort offspring in descending order
-        offspring.sort(key=lambda x: x.fitness.values[0], reverse=True)
-        elite = offspring[:num_elite]
-        non_elite = offspring[num_elite:]
-        nons = list(non_elite)
-        import pdb;pdb.set_trace()
+        #offspring.sort(key=lambda x: x.fitness.values[0], reverse=True)
+        # elite = offspring[:num_elite]
+        # non_elite = offspring[num_elite:]
+        # non_elite = offspring
         # Apply crossover and mutation on the offspring
         # split list in two
-        for child1, child2 in zip(non_elite[::2], non_elite[1::2]):
+        for child1, child2 in zip(offspring[::2], offspring[1::2]):
             if random.random() < cxpb:
                 toolbox.mate(child1, child2)
                 # generate new ids for children
@@ -163,7 +162,7 @@ def main(pop_size, num_generations,
                 del child1.fitness.values
                 del child2.fitness.values
 
-        for mutant in non_elite:
+        for mutant in offspring:
             if random.random() < mutpb:
                 toolbox.mutate(mutant)
                 # generate new id for mutant
@@ -171,7 +170,7 @@ def main(pop_size, num_generations,
                 del mutant.fitness.values
 
         # combine non elite and elite
-        offspring = elite + non_elite
+        # offspring = elite + non_elite
 
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]

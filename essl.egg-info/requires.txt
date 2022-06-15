@@ -17,8 +17,8 @@ hydra-core==1.1.2
 idna==3.3
 importlib-metadata==4.11.3
 joblib==1.1.0
-lightly==1.2.13
-lightly-utils==0.0.2
+lightly
+lightly-utils
 Markdown==3.3.6
 multidict==6.0.2
 numpy==1.22.3
