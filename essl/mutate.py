@@ -40,7 +40,7 @@ class MutateOperators:
 
 
 
-def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10):
+def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10, intensity_increments=10):
     """
     DIrectly modified from source code to work with our chromosomes
 
@@ -60,7 +60,7 @@ def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10):
     This function uses the :func:`~random.random` and :func:`~random.gauss`
     functions from the python base :mod:`random` module.
     """
-    random.seed(10)
+    random.seed(seed)
     size = len(individual)
     if not isinstance(mu, Sequence):
         mu = repeat(mu, size)
@@ -73,14 +73,22 @@ def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10):
 
     for i, m, s in zip(range(size), mu, sigma):
         if random.random() < indpb:
-            update = individual[i][1] + random.gauss(m, s)
+            i_range = DEFAULT_OPS[individual[i][0]]
+            increment = abs(i_range[1] - i_range[0]) / intensity_increments
+            # update = individual[i][1] + (increment * random.choice([-1, 1])) # in future could extend to more than just -1, 1
+            if isinstance(i_range[0], int):
+                update = int(random.choice(np.arange(*i_range, increment, dtype=int)))
+            else:
+                update = float(round(random.choice(np.arange(*i_range, increment, dtype=float)), 2))
+                # mutate to another random val possible in the range of intensities
             # max out range
-            if update < DEFAULT_OPS[individual[i][0]][0]:
-                update = DEFAULT_OPS[individual[i][0]][0]
-            elif update > DEFAULT_OPS[individual[i][0]][1]:
-                update = DEFAULT_OPS[individual[i][0]][1]
+            # if update < DEFAULT_OPS[individual[i][0]][0]:
+            #     update = DEFAULT_OPS[individual[i][0]][0]
+            # elif update > DEFAULT_OPS[individual[i][0]][1]:
+            #     update = DEFAULT_OPS[individual[i][0]][1]
             individual[i][1] = update
     return individual,
+
 
 
 

@@ -83,7 +83,7 @@ def TranslateY(intensity: int,
 def Rotate(intensity: int,
            interpolation: InterpolationMode=InterpolationMode.NEAREST,
            fill: Optional[List[float]] = None,):
-    return lambda img: F.rotate(img, intensity, interpolation=interpolation, fill=fill)
+    return lambda img: F.rotate(img=img, angle=intensity, interpolation=interpolation, fill=fill)
 
 def Brightness(intensity: float):
     return lambda img: F.adjust_brightness(img, 1.0 + intensity)

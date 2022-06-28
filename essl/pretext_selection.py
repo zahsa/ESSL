@@ -42,7 +42,7 @@ class SimCLR(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=8,
+            num_workers=0,
         )
         criterion = NTXentLoss().to(device)
         optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
@@ -50,6 +50,7 @@ class SimCLR(nn.Module):
         print("Starting Training")
         for epoch in range(num_epochs):
             total_loss = 0
+            print(f"epoch {epoch} device {device}")
             for (x0, x1), _, _ in dataloader:
                 x0 = x0.to(device)
                 x1 = x1.to(device)
@@ -109,7 +110,7 @@ class SwaV(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=8,
+            num_workers=0,
         )
 
         criterion = SwaVLoss()
@@ -184,7 +185,7 @@ class BYOL(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=8,
+            num_workers=0,
         )
         criterion = NegativeCosineSimilarity()
         optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
@@ -255,7 +256,7 @@ class NNCLR(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=8,
+            num_workers=0,
         )
         criterion = NTXentLoss().to(device)
         optimizer = torch.optim.SGD(self.parameters(), lr=0.06)

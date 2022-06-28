@@ -71,10 +71,10 @@ class finetune:
     def __call__(self, backbone: torch.nn.Module, report_all_metrics: bool=False):
         model = finetune_model(backbone.backbone, backbone.in_features, self.dataset.num_classes).to(self.device)
         trainloader = torch.utils.data.DataLoader(self.dataset.train_data,
-                                                  batch_size=self.batch_size, shuffle=True)
+                                                  batch_size=self.batch_size, shuffle=True, num_workers=0)
         if self.dataset.val_data:
             valloader = torch.utils.data.DataLoader(self.dataset.val_data,
-                                                      batch_size=self.batch_size, shuffle=False)
+                                                      batch_size=self.batch_size, shuffle=False, num_workers=0)
         else:
             valloader = None
         criterion = self.loss

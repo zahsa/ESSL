@@ -11,3 +11,25 @@ Installation from source
 cd path/to/ESSL
 pip install -e .
 ```
+
+## Running an Experiment using CLI
+
+To run a training experiment using the CLI, after installation, one can use the essl_train command.
+
+```
+essl_train \
+  --pop_size 2 \
+  --num_generations 2 \
+  --cxpb 0.2 \
+  --mutpb 0.5 \
+  --dataset Cifar10 \
+  --backbone tinyCNN_backbone \
+  --ssl_task SimCLR \
+  --ssl_epochs 5 \
+  --ssl_batch_size 256 \
+  --evaluate_downstream_method finetune \
+  --device cuda \
+  --exp_dir ./ \
+  --use_tensorboard True \
+  --save_plots True
+```

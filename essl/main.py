@@ -11,12 +11,17 @@ from datetime import datetime
 import pandas as pd
 sns.set_theme()
 import copy
+import json
+from itertools import combinations
+import multiprocessing
+
 
 from essl.chromosome import chromosome_generator
 from essl import fitness
 from essl import mutate
-from essl.crossover import PMX
+from essl.crossover import PMX, cxOnePoint
 from essl.utils import id_generator
+from essl.parallel import dist_fit
 
 
 @click.command()
@@ -36,6 +41,9 @@ from essl.utils import id_generator
 @click.option("--use_tensorboard", default=True, type=bool, help="whether to use tensorboard or not")
 @click.option("--save_plots", default=True, type=bool, help="whether to save plots or not")
 @click.option("--chromosome_length", default=5, type=int, help="number of genes in chromosome")
+@click.option("--num_elite", default=2, type=int, help="number of elite chromosomes")
+@click.option("--adaptive_pbs", default=False, type=bool, help="whether to use adaptive mut and cx pb")
+@click.option("--patience", default=3, type=int, help="number of non-improving generations before early stopping")
 def main_cli(pop_size, num_generations,
                              cxpb,
                              mutpb,
@@ -50,7 +58,10 @@ def main_cli(pop_size, num_generations,
                              exp_dir,
                              use_tensorboard,
                              save_plots,
-                             chromosome_length):
+                             chromosome_length,
+                             num_elite,
+                             adaptive_pbs,
+                            patience):
     main(pop_size=pop_size,
          num_generations=num_generations,
          cxpb=cxpb,
@@ -66,7 +77,10 @@ def main_cli(pop_size, num_generations,
          exp_dir=exp_dir,
          use_tensorboard=use_tensorboard,
          save_plots=save_plots,
-         chromosome_length=chromosome_length)
+         chromosome_length=chromosome_length,
+         num_elite=num_elite,
+         adaptive_pbs=adaptive_pbs,
+         patience=patience)
 
 
 def main(pop_size, num_generations,
@@ -86,7 +100,11 @@ def main(pop_size, num_generations,
                              save_plots=True,
                              chromosome_length=5,
                              seed=10,
-                             num_elite=2):
+                             num_elite=2,
+                             adaptive_pbs=False,
+                             num_workers=2,
+                             patience = 3
+                            ):
 
     # set seeds #
     random.seed(seed)
@@ -121,10 +139,13 @@ def main(pop_size, num_generations,
         toolbox.register("mate", PMX)
     elif crossover == "twopoint":
         toolbox.register("mate", tools.cxTwoPoint)
+    elif crossover == "onepoint":
+        toolbox.register("mate", cxOnePoint)
     else:
         raise ValueError(f"invalid crossover ({crossover})")
     toolbox.register("mutate", mutate.mutGaussian, indpb=0.05)
     toolbox.register("select", tools.selTournament, tournsize=3)
+
 
     # init pop and fitnesses #
     pop = toolbox.population(n=pop_size)
@@ -133,36 +154,70 @@ def main(pop_size, num_generations,
     for ind in pop:
         ind.id = next(id_gen)
 
-    fitnesses = list(map(toolbox.evaluate, pop))
+    # we want to parralelize this loop for N gpus
+    # evaluate function takes a list of chromos and gpu number
+    # outputs list of evaluations
+    # def dist_fit(gpu, sub_pop):
+    #     print(f"eval {len(sub_pop)} on gpu {gpu}")
+    #     return gpu
+    #
+    chunk_size = int(len(pop)/num_workers)
+    ranges = list(range(0, len(pop), chunk_size))
+    chunks = []
+    for i in range(len(ranges)-1):
+        chunks.append([i, pop[ranges[i]:ranges[i+1]]])
+    chunks.append([len(ranges)-1, pop[ranges[-1]:]])
+    pool = multiprocessing.Pool(processes=num_workers)
+
+    outputs = pool.starmap(dist_fit, [(gpu, sub_pop, toolbox.evaluate) for gpu, sub_pop in chunks])
+    pool.close()
+    import pdb;
+    pdb.set_trace()
+    # fitnesses = list(map(toolbox.evaluate, pop))
+
+    # fitnesses = [[0] for i in range(len(pop))]
     for ind, fit in zip(pop, fitnesses):
        ind.fitness.values = fit
-    outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std"]}
+    outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std", "chromos"]}
 
+    max_ind = pop[0].fitness.values[0]
+    for ind in pop:
+        if ind.fitness.values[0] > max_ind:
+            max_ind = ind.fitness.values[0]
+    history = [max_ind]
+    no_improvement_count = 0
     # evolution loop
     for g in range(num_generations):
         print("-- Generation %i --" % g)
+        if adaptive_pbs:
+            cxpb = 1 - ((g+1) / num_generations)
+            mutpb = ((g+1) / num_generations)
+
         # Select the next generation individuals
         offspring = toolbox.select(pop, len(pop))
         # Clone the selected individuals
         offspring = list(map(toolbox.clone, offspring))
 
         # sort offspring in descending order
-        #offspring.sort(key=lambda x: x.fitness.values[0], reverse=True)
-        # elite = offspring[:num_elite]
-        # non_elite = offspring[num_elite:]
-        # non_elite = offspring
+        offspring.sort(key=lambda x: x.fitness.values[0], reverse=True)
+        elite = offspring[:num_elite]
+        non_elite = offspring[num_elite:]
+        random.shuffle(non_elite)
+
         # Apply crossover and mutation on the offspring
         # split list in two
-        for child1, child2 in zip(offspring[::2], offspring[1::2]):
-            if random.random() < cxpb:
-                toolbox.mate(child1, child2)
-                # generate new ids for children
-                child1.id = next(id_gen)
-                child2.id = next(id_gen)
-                del child1.fitness.values
-                del child2.fitness.values
+        for child1, child2 in zip(non_elite[::2], non_elite[1::2]): # Potenitally problematic, when uneven only does as many even pairs as possible
+            if child1 != child2: # when using uneven numbers this method will combine the same chromo twice
+                if random.random() < cxpb:
+                    toolbox.mate(child1, child2)
+                    # generate new ids for children
+                    child1.id = next(id_gen)
+                    child2.id = next(id_gen)
+                    del child1.fitness.values
+                    del child2.fitness.values
 
-        for mutant in offspring:
+
+        for mutant in non_elite:
             if random.random() < mutpb:
                 toolbox.mutate(mutant)
                 # generate new id for mutant
@@ -170,10 +225,11 @@ def main(pop_size, num_generations,
                 del mutant.fitness.values
 
         # combine non elite and elite
-        # offspring = elite + non_elite
+        offspring[:] = elite + non_elite
 
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+
         fitnesses = map(toolbox.evaluate, invalid_ind)
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = fit
@@ -195,7 +251,7 @@ def main(pop_size, num_generations,
         std = abs(sum2 / length - mean ** 2) ** 0.5
         min_f = min_ind.fitness.values[0]
         max_f = max_ind.fitness.values[0]
-
+        history.append(max_f)
         print("  Min %s" % min_f)
         print("  Max %s" % max_f)
         print("  Avg %s" % mean)
@@ -225,6 +281,16 @@ def main(pop_size, num_generations,
         outcomes["avg"].append(mean)
         outcomes["std"].append(std)
         outcomes["pop_vals"]+=[[g, f] for f in fits]
+        outcomes["chromos"]+=[[g, c] for c in pop]
+
+        # early stopping
+        if history[-1] > history[-2]:
+            no_improvement_count = 0
+        else:
+            no_improvement_count+=1
+        # stop if no improvement after two generations
+        if no_improvement_count == patience:
+            break
 
     if save_plots:
         plot_dir = os.path.join(exp_dir, "plots")
@@ -235,11 +301,16 @@ def main(pop_size, num_generations,
                 sns.boxplot(data=pd.DataFrame(outcomes[m], columns=["gen", "fitness"]), x="gen", y="fitness")
                 plt.savefig(os.path.join(plot_dir, f"{m}.png"))
                 plt.clf()
+            elif m == "chromos":
+                continue
             else:
                 values = outcomes[m]
                 sns.lineplot(list(range(len(values))), values)
                 plt.savefig(os.path.join(plot_dir, f"{m}.png"))
                 plt.clf()
+
+    with open(os.path.join(exp_dir, "outcomes.json"), "w") as f:
+        json.dump(outcomes, f)
 
 
 if __name__ == "__main__":
@@ -249,7 +320,7 @@ if __name__ == "__main__":
          ssl_epochs=1,
          num_generations=2,
          backbone="tinyCNN_backbone",
-         exp_dir="/home/noah/ESSL/experiments/test_3",
+         exp_dir="/home/noah/ESSL/experiments/iteration_7",
          evaluate_downstream_kwargs={"num_epochs":1},
          crossover="PMX"
          )
