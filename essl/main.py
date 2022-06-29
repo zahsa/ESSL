@@ -27,7 +27,8 @@ from essl.utils import id_generator
 @click.option("--num_generations",type=int, help="number of generations")
 @click.option("--cxpb", default=0.2,type=float, help="probability of crossover")
 @click.option("--mutpb", default=0.5,type=float, help="probability of mutation")
-@click.option("--crossover", default="PMX",type=str, help="typer of crossover (PMX, twopoint)")
+@click.option("--crossover", default="PMX",type=str, help="type of crossover (PMX, twopoint, onepoint)")
+@click.option("--selection", default="SUS",type=str, help="type of selection (SUS, tournament)")
 @click.option("--dataset", default="Cifar10",type=str, help="data set to use (Cifar10, )")
 @click.option("--backbone", default="ResNet18_backbone",type=str, help="backbone to use (ResNet18_backbone, tinyCNN_backbone, largerCNN_backbone)")
 @click.option("--ssl_task", default="SimCLR", type=str, help="SSL method (SimCLR)")
@@ -50,6 +51,7 @@ def main_cli(pop_size, num_generations,
                              cxpb,
                              mutpb,
                              crossover,
+                             selection,
                              dataset,
                              backbone,
                              ssl_task,
@@ -71,6 +73,7 @@ def main_cli(pop_size, num_generations,
          cxpb=cxpb,
          mutpb=mutpb,
          crossover=crossover,
+         selection=selection,
          dataset=dataset,
          backbone=backbone,
          ssl_task=ssl_task,
@@ -93,6 +96,7 @@ def main(pop_size, num_generations,
                              cxpb =  0.2,
                              mutpb = 0.5,
                              crossover = "PMX",
+                             selection = "SUS",
                              dataset="Cifar10",
                              backbone="tinyCNN_backbone",
                              ssl_task="SimCLR",
@@ -154,7 +158,10 @@ def main(pop_size, num_generations,
     else:
         raise ValueError(f"invalid crossover ({crossover})")
     toolbox.register("mutate", mutate.mutGaussian, indpb=0.05)
-    toolbox.register("select", tools.selTournament, tournsize=3)
+    if selection == "tournament":
+        toolbox.register("select", tools.selTournament, tournsize=3)
+    elif selection == "SUS":
+        toolbox.register("select", tools.selStochasticUniversalSampling)
 
     # init pop and fitnesses #
     pop = toolbox.population(n=pop_size)
