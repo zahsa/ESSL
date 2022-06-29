@@ -68,13 +68,15 @@ class finetune:
             self.writer = None
         self.use_scheduler = use_scheduler
 
-    def __call__(self, backbone: torch.nn.Module, report_all_metrics: bool=False):
-        model = finetune_model(backbone.backbone, backbone.in_features, self.dataset.num_classes).to(self.device)
+    def __call__(self, backbone: torch.nn.Module, device=None, report_all_metrics: bool=False):
+        if not device:
+            device = self.device
+        model = finetune_model(backbone.backbone, backbone.in_features, self.dataset.num_classes).to(device)
         trainloader = torch.utils.data.DataLoader(self.dataset.train_data,
-                                                  batch_size=self.batch_size, shuffle=True, num_workers=0)
+                                                  batch_size=self.batch_size, shuffle=True, num_workers=12)
         if self.dataset.val_data:
             valloader = torch.utils.data.DataLoader(self.dataset.val_data,
-                                                      batch_size=self.batch_size, shuffle=False, num_workers=0)
+                                                      batch_size=self.batch_size, shuffle=False, num_workers=12)
         else:
             valloader = None
         criterion = self.loss
@@ -94,29 +96,22 @@ class finetune:
             epochs = range(self.num_epochs)
         for epoch in epochs:
             running_loss = 0.0
-            # train_y_true = torch.tensor([], dtype=torch.long).to(self.device)
-            # train_pred_probs = torch.tensor([]).to(self.device)
             correct = 0
             total = 0
             for X, y in trainloader:
-                inputs, labels = X.to(self.device), y.to(self.device)
+                inputs, labels = X.to(device), y.to(device)
                 optimizer.zero_grad()
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
                 running_loss+=loss.item()
                 loss.backward()
                 optimizer.step()
+
                 # record predictions
-                # train_y_true = torch.cat((train_y_true, labels), 0)
-                # train_pred_probs = torch.cat((train_pred_probs, outputs), 0)
                 _, predicted = outputs.max(1)
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
             # compute acc
-            #train_y_true = train_y_true.cpu().numpy()
-            #_, train_y_pred = torch.max(train_pred_probs, 1)
-            #train_y_pred = train_y_pred.cpu().numpy()
-            # train_acc = accuracy_score(train_y_true, train_y_pred)
             train_loss = running_loss/len(trainloader)
             train_acc = 100.*correct/total
 
@@ -127,13 +122,13 @@ class finetune:
 
             if valloader:
                 with torch.no_grad():
-                    # val_y_true = torch.tensor([], dtype=torch.long).to(self.device)
-                    # val_pred_probs = torch.tensor([]).to(self.device)
+                    # val_y_true = torch.tensor([], dtype=torch.long).to(device)
+                    # val_pred_probs = torch.tensor([]).to(device)
                     running_loss = 0.0
                     total = 0
                     correct = 0
                     for X, y in valloader:
-                        inputs, labels = X.to(self.device), y.to(self.device)
+                        inputs, labels = X.to(device), y.to(device)
                         outputs = model(inputs)
                         loss = criterion(outputs, labels)
                         running_loss += loss.item()
@@ -169,16 +164,16 @@ class finetune:
                                                  batch_size=self.batch_size,
                                                  shuffle=False)
         model.eval()
-        # y_true = torch.tensor([], dtype=torch.long).to(self.device)
-        # pred_probs = torch.tensor([]).to(self.device)
+        # y_true = torch.tensor([], dtype=torch.long).to(device)
+        # pred_probs = torch.tensor([]).to(device)
         total = 0
         correct = 0
         running_loss = 0.0
         # deactivate autograd engine
         with torch.no_grad():
             for X, y in testloader:
-                inputs = X.to(self.device)
-                labels = y.to(self.device)
+                inputs = X.to(device)
+                labels = y.to(device)
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
                 running_loss += loss.item()

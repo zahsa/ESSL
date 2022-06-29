@@ -50,15 +50,15 @@ class pretext_task:
         self.batch_size = batch_size
         self.device = device
 
-
-
-    def __call__(self, transform):
+    def __call__(self, transform, device=None):
+        if not device:
+            device = self.device
         model = self.model(self.backbone(self.seed))
         loss = model.fit(transform,
                   self.dataset,
                   self.batch_size,
                   self.num_epochs,
-                  self.device)
+                  device)
         return model, loss
 
 
@@ -91,6 +91,7 @@ class fitness_function:
         self.backbone = backbone
         self.ssl_epochs = ssl_epochs
         self.ssl_batch_size = ssl_batch_size
+        self.evaluate_downstream_method = evaluate_downstream_method
         self.evaluate_downstream_kwargs = evaluate_downstream_kwargs
         self.ssl_task = ssl_task
         # self.ssl_task = pretext_task(method=ssl_task,
@@ -107,7 +108,18 @@ class fitness_function:
         #                                                                                     **evaluate_downstream_kwargs)
         self.downstream_losses = {}
         self.device = device
-
+        self.ssl_task = pretext_task(method=self.ssl_task,
+                                dataset=self.dataset,
+                                backbone=self.backbone,
+                                num_epochs=self.ssl_epochs,
+                                batch_size=self.ssl_batch_size,
+                                device=self.device,
+                                seed=self.seed
+                                )
+        self.evaluate_downstream = evaluate_downstream.__dict__[self.evaluate_downstream_method](dataset=self.dataset,
+                                                                                                 seed=self.seed,
+                                                                                                 device=self.device,
+                                                                                                 **self.evaluate_downstream_kwargs)
 
 
     @staticmethod
@@ -122,27 +134,15 @@ class fitness_function:
     def clear_downstream_losses(self):
         self.downstream_losses = {}
 
-    def __call__(self, chromosome, device="cuda:0", return_losses=False):
+    def __call__(self, chromosome, device=None, return_losses=False):
+        if not device:
+            device = self.device
         t1 = time.time()
         transform = self.gen_augmentation_torch(chromosome)
-        print(f"B4 SSL, {device}")
-        ssl_task = pretext_task(method=self.ssl_task,
-                                dataset=self.dataset,
-                                backbone=self.backbone,
-                                num_epochs=self.ssl_epochs,
-                                batch_size=self.ssl_batch_size,
-                                device=device,
-                                seed=self.seed
-                                )
-        print(f"After create SSL, {device}")
-        representation, ssl_losses = ssl_task(transform)
-        print(f"After SSL, {device}")
-        evaluate_downstream = evaluate_downstream.__dict__[evaluate_downstream_method](dataset=self.dataset,
-                                                                                       seed=seed,
-                                                                                       device=device,
-                                                                                       **self.evaluate_downstream_kwargs)
-        print(f"After eval, {device}")
-        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = evaluate_downstream(representation, report_all_metrics=True)
+
+
+        representation, ssl_losses = self.ssl_task(transform, device=device)
+        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation, device=device, report_all_metrics=True)
         print("time to eval: ", time.time() - t1)
         if return_losses:
             return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss

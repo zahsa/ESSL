@@ -12,6 +12,7 @@ essl/main.py
 essl/mutate.py
 essl/ops.py
 essl/optimizers.py
+essl/parallel.py
 essl/pretext_selection.py
 essl/utils.py
 essl.egg-info/PKG-INFO

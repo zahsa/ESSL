@@ -42,7 +42,7 @@ class SimCLR(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=0,
+            num_workers=12,
         )
         criterion = NTXentLoss().to(device)
         optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
@@ -110,7 +110,7 @@ class SwaV(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=0,
+            num_workers=12,
         )
 
         criterion = SwaVLoss()
@@ -185,7 +185,7 @@ class BYOL(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=0,
+            num_workers=12,
         )
         criterion = NegativeCosineSimilarity()
         optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
@@ -256,7 +256,7 @@ class NNCLR(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=0,
+            num_workers=12,
         )
         criterion = NTXentLoss().to(device)
         optimizer = torch.optim.SGD(self.parameters(), lr=0.06)

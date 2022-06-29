@@ -44,6 +44,7 @@ from essl.parallel import dist_fit
 @click.option("--num_elite", default=2, type=int, help="number of elite chromosomes")
 @click.option("--adaptive_pbs", default=False, type=bool, help="whether to use adaptive mut and cx pb")
 @click.option("--patience", default=3, type=int, help="number of non-improving generations before early stopping")
+@click.option("--discrete_intensity", default=True, type=bool, help="whether or not to use discrete intensity vals")
 def main_cli(pop_size, num_generations,
                              cxpb,
                              mutpb,
@@ -61,7 +62,8 @@ def main_cli(pop_size, num_generations,
                              chromosome_length,
                              num_elite,
                              adaptive_pbs,
-                            patience):
+                            patience,
+                         discrete_intensity):
     main(pop_size=pop_size,
          num_generations=num_generations,
          cxpb=cxpb,
@@ -80,7 +82,8 @@ def main_cli(pop_size, num_generations,
          chromosome_length=chromosome_length,
          num_elite=num_elite,
          adaptive_pbs=adaptive_pbs,
-         patience=patience)
+         patience=patience,
+         discrete_intensity=discrete_intensity)
 
 
 def main(pop_size, num_generations,
@@ -102,13 +105,12 @@ def main(pop_size, num_generations,
                              seed=10,
                              num_elite=2,
                              adaptive_pbs=False,
-                             num_workers=2,
-                             patience = 3
+                             patience = 3,
+                             discrete_intensity=True
                             ):
 
     # set seeds #
     random.seed(seed)
-
     if use_tensorboard:
         tb_dir = os.path.join(exp_dir, "tensorboard")
         if not os.path.isdir(tb_dir):
@@ -121,7 +123,7 @@ def main(pop_size, num_generations,
     toolbox = base.Toolbox()
     creator.create("Fitness", base.Fitness, weights=(100.0,)) # maximize accuracy
     creator.create("Individual", list, fitness=creator.Fitness, id=None)
-    toolbox.register("gen_aug", chromosome_generator(length=chromosome_length, seed=seed))
+    toolbox.register("gen_aug", chromosome_generator(length=chromosome_length, discrete=discrete_intensity, seed=seed))
     toolbox.register("individual", tools.initIterate, creator.Individual,
                      toolbox.gen_aug)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
@@ -146,7 +148,6 @@ def main(pop_size, num_generations,
     toolbox.register("mutate", mutate.mutGaussian, indpb=0.05)
     toolbox.register("select", tools.selTournament, tournsize=3)
 
-
     # init pop and fitnesses #
     pop = toolbox.population(n=pop_size)
     # generate ids for each individual
@@ -161,21 +162,20 @@ def main(pop_size, num_generations,
     #     print(f"eval {len(sub_pop)} on gpu {gpu}")
     #     return gpu
     #
-    chunk_size = int(len(pop)/num_workers)
-    ranges = list(range(0, len(pop), chunk_size))
-    chunks = []
-    for i in range(len(ranges)-1):
-        chunks.append([i, pop[ranges[i]:ranges[i+1]]])
-    chunks.append([len(ranges)-1, pop[ranges[-1]:]])
-    pool = multiprocessing.Pool(processes=num_workers)
+    # chunk_size = int(len(pop) / num_workers)
+    # ranges = list(range(0, len(pop), chunk_size))
+    # chunks = []
+    # for i in range(len(ranges) - 1):
+    #     chunks.append([i, pop[ranges[i]:ranges[i + 1]]])
+    # chunks.append([len(ranges) - 1, pop[ranges[-1]:]])
+    # pool = multiprocessing.Pool(processes=num_workers)
+    #
+    # outputs = pool.starmap(dist_fit, [(gpu, sub_pop, toolbox.evaluate) for gpu, sub_pop in chunks])
+    # pool.close()
+    # import pdb;
+    # pdb.set_trace()
+    fitnesses = list(map(toolbox.evaluate, pop))
 
-    outputs = pool.starmap(dist_fit, [(gpu, sub_pop, toolbox.evaluate) for gpu, sub_pop in chunks])
-    pool.close()
-    import pdb;
-    pdb.set_trace()
-    # fitnesses = list(map(toolbox.evaluate, pop))
-
-    # fitnesses = [[0] for i in range(len(pop))]
     for ind, fit in zip(pop, fitnesses):
        ind.fitness.values = fit
     outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std", "chromos"]}
@@ -215,7 +215,6 @@ def main(pop_size, num_generations,
                     child2.id = next(id_gen)
                     del child1.fitness.values
                     del child2.fitness.values
-
 
         for mutant in non_elite:
             if random.random() < mutpb:
@@ -317,7 +316,7 @@ if __name__ == "__main__":
     import time
     t1 = time.time()
     main(pop_size=4,
-         ssl_epochs=1,
+         ssl_epochs=10,
          num_generations=2,
          backbone="tinyCNN_backbone",
          exp_dir="/home/noah/ESSL/experiments/iteration_7",
