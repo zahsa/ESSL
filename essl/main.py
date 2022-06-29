@@ -10,12 +10,15 @@ from tensorboardX import SummaryWriter
 from datetime import datetime
 import pandas as pd
 sns.set_theme()
-import copy
+import json
+
 
 from essl.chromosome import chromosome_generator
 from essl import fitness
 from essl import mutate
 from essl.crossover import PMX
+# D1: Implemente cxOnePoint to have feasibility check
+# from essl.crossover import cxOnePoint
 from essl.utils import id_generator
 
 
@@ -36,6 +39,13 @@ from essl.utils import id_generator
 @click.option("--use_tensorboard", default=True, type=bool, help="whether to use tensorboard or not")
 @click.option("--save_plots", default=True, type=bool, help="whether to save plots or not")
 @click.option("--chromosome_length", default=5, type=int, help="number of genes in chromosome")
+# D2,3,4,5
+# elitism, adaptive probs, patience, discrete intensities
+# @click.option("--num_elite", default=2, type=int, help="number of elite chromosomes")
+@click.option("--adaptive_pbs", default=False, type=bool, help="whether to use adaptive mut and cx pb")
+@click.option("--patience", default=-1, type=int, help="number of non-improving generations before early stopping")
+@click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
+
 def main_cli(pop_size, num_generations,
                              cxpb,
                              mutpb,
@@ -50,7 +60,12 @@ def main_cli(pop_size, num_generations,
                              exp_dir,
                              use_tensorboard,
                              save_plots,
-                             chromosome_length):
+                             chromosome_length,
+                             # num_elite,
+                             adaptive_pbs,
+                             patience,
+                             discrete_intensity
+                             ):
     main(pop_size=pop_size,
          num_generations=num_generations,
          cxpb=cxpb,
@@ -66,7 +81,12 @@ def main_cli(pop_size, num_generations,
          exp_dir=exp_dir,
          use_tensorboard=use_tensorboard,
          save_plots=save_plots,
-         chromosome_length=chromosome_length)
+         chromosome_length=chromosome_length,
+         # num_elite=num_elite,
+         adaptive_pbs=adaptive_pbs,
+         patience=patience,
+         discrete_intensity=discrete_intensity
+         )
 
 
 def main(pop_size, num_generations,
@@ -86,7 +106,11 @@ def main(pop_size, num_generations,
                              save_plots=True,
                              chromosome_length=5,
                              seed=10,
-                             num_elite=2):
+                             # num_elite=2,
+                             adaptive_pbs=False,
+                             patience = -1,
+                             discrete_intensity=False
+                            ):
 
     # set seeds #
     random.seed(seed)
@@ -103,7 +127,10 @@ def main(pop_size, num_generations,
     toolbox = base.Toolbox()
     creator.create("Fitness", base.Fitness, weights=(100.0,)) # maximize accuracy
     creator.create("Individual", list, fitness=creator.Fitness, id=None)
-    toolbox.register("gen_aug", chromosome_generator(length=chromosome_length, seed=seed))
+    # D7: add discrete option to chromo generator (add)
+    toolbox.register("gen_aug", chromosome_generator(length=chromosome_length,
+                                                     discrete=discrete_intensity,
+                                                     seed=seed))
     toolbox.register("individual", tools.initIterate, creator.Individual,
                      toolbox.gen_aug)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
@@ -121,6 +148,9 @@ def main(pop_size, num_generations,
         toolbox.register("mate", PMX)
     elif crossover == "twopoint":
         toolbox.register("mate", tools.cxTwoPoint)
+    # D8: onepoint crossover (added deaps version)
+    elif crossover == "onepoint":
+        toolbox.register("mate", tools.cxOnePoint)
     else:
         raise ValueError(f"invalid crossover ({crossover})")
     toolbox.register("mutate", mutate.mutGaussian, indpb=0.05)
@@ -136,8 +166,16 @@ def main(pop_size, num_generations,
     fitnesses = list(map(toolbox.evaluate, pop))
     for ind, fit in zip(pop, fitnesses):
        ind.fitness.values = fit
-    outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std"]}
+    # D9: record chromosomes information
+    outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std", "chromos"]}
 
+    # D10: early stopping (added, by default will never stop (default val = -1))
+    max_ind = pop[0].fitness.values[0]
+    for ind in pop:
+        if ind.fitness.values[0] > max_ind:
+            max_ind = ind.fitness.values[0]
+    history = [max_ind]
+    no_improvement_count = 0
     # evolution loop
     for g in range(num_generations):
         print("-- Generation %i --" % g)
@@ -146,13 +184,25 @@ def main(pop_size, num_generations,
         # Clone the selected individuals
         offspring = list(map(toolbox.clone, offspring))
 
+        # D11: adaptive pbs (does not affect outcome if toggled off) (add)
+        if adaptive_pbs:
+            cxpb = 1 - ((g + 1) / num_generations)
+            mutpb = ((g + 1) / num_generations)
+
+        # D12: Elitism (not added at this point)
         # sort offspring in descending order
-        #offspring.sort(key=lambda x: x.fitness.values[0], reverse=True)
+        # offspring.sort(key=lambda x: x.fitness.values[0], reverse=True)
         # elite = offspring[:num_elite]
         # non_elite = offspring[num_elite:]
-        # non_elite = offspring
+        # random.shuffle(non_elite)
+
         # Apply crossover and mutation on the offspring
         # split list in two
+
+        # D13: iterate through entire offspring rather than just non_elite (kept for now)
+        # TODO: make elites crossover but not mutate
+        # TODO: confirm default, no elite causes it to act as if entire pop
+
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
             if random.random() < cxpb:
                 toolbox.mate(child1, child2)
@@ -169,6 +219,7 @@ def main(pop_size, num_generations,
                 mutant.id = next(id_gen)
                 del mutant.fitness.values
 
+        # D13: when using elitism we combine here
         # combine non elite and elite
         # offspring = elite + non_elite
 
@@ -195,7 +246,8 @@ def main(pop_size, num_generations,
         std = abs(sum2 / length - mean ** 2) ** 0.5
         min_f = min_ind.fitness.values[0]
         max_f = max_ind.fitness.values[0]
-
+        # D14: history for early stopping (add)
+        history.append(max_f)
         print("  Min %s" % min_f)
         print("  Max %s" % max_f)
         print("  Avg %s" % mean)
@@ -225,7 +277,18 @@ def main(pop_size, num_generations,
         outcomes["avg"].append(mean)
         outcomes["std"].append(std)
         outcomes["pop_vals"]+=[[g, f] for f in fits]
+        # D15: record chromos (add)
+        outcomes["chromos"] += [[g, c] for c in pop]
 
+        # D16: early stopping (added, by default will never break)
+        # early stopping
+        if history[-1] > history[-2]:
+            no_improvement_count = 0
+        else:
+            no_improvement_count += 1
+        # stop if no improvement after two generations
+        if no_improvement_count == patience:
+            break
     if save_plots:
         plot_dir = os.path.join(exp_dir, "plots")
         if not os.path.isdir(plot_dir):
@@ -235,11 +298,18 @@ def main(pop_size, num_generations,
                 sns.boxplot(data=pd.DataFrame(outcomes[m], columns=["gen", "fitness"]), x="gen", y="fitness")
                 plt.savefig(os.path.join(plot_dir, f"{m}.png"))
                 plt.clf()
+
+            # D17: continue over chromos (add)
+            elif m == "chromos":
+                continue
             else:
                 values = outcomes[m]
                 sns.lineplot(list(range(len(values))), values)
                 plt.savefig(os.path.join(plot_dir, f"{m}.png"))
                 plt.clf()
+    # D18: save outcomes
+    with open(os.path.join(exp_dir, "outcomes.json"), "w") as f:
+        json.dump(outcomes, f)
 
 
 if __name__ == "__main__":

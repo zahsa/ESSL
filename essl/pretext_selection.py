@@ -1,9 +1,6 @@
 import torch
 from torch import nn
-import torchvision
 import copy
-
-from lightly.data import LightlyDataset
 from lightly.data import SimCLRCollateFunction, BaseCollateFunction, MultiCropCollateFunction
 from lightly.loss import NTXentLoss
 from lightly.models.modules import SimCLRProjectionHead
@@ -18,6 +15,7 @@ from lightly.models.modules import NNCLRProjectionHead
 from lightly.models.modules import NNCLRPredictionHead
 from lightly.models.modules import NNMemoryBankModule
 
+# D1: change num workers from 8 to 12 (add)
 class SimCLR(nn.Module):
     def __init__(self, backbone, seed=10):
         super().__init__()
@@ -42,7 +40,7 @@ class SimCLR(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=8,
+            num_workers=12,
         )
         criterion = NTXentLoss().to(device)
         optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
@@ -109,7 +107,7 @@ class SwaV(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=8,
+            num_workers=12,
         )
 
         criterion = SwaVLoss()
@@ -184,7 +182,7 @@ class BYOL(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=8,
+            num_workers=12,
         )
         criterion = NegativeCosineSimilarity()
         optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
@@ -255,7 +253,7 @@ class NNCLR(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=8,
+            num_workers=12,
         )
         criterion = NTXentLoss().to(device)
         optimizer = torch.optim.SGD(self.parameters(), lr=0.06)

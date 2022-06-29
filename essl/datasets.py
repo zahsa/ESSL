@@ -1,8 +1,6 @@
 import torchvision
 from torchvision import transforms
-from sklearn.model_selection import train_test_split
 import torch
-from copy import copy
 
 from torch.utils.data import random_split
 class Data:

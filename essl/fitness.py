@@ -1,23 +1,13 @@
 import numpy as np
-from torch import nn
 import torchvision
 import torch
-import torch.optim as optim
 from lightly.data import LightlyDataset
-from lightly.data import SimCLRCollateFunction, BaseCollateFunction
-from lightly.loss import NTXentLoss
-from lightly.models.modules import SimCLRProjectionHead
-from functools import partial
-import PIL
-import pandas as pd
-import os
-from sklearn.metrics import accuracy_score
+
 
 from essl import ops
 from essl import chromosome
 from essl import pretext_selection
 from essl import backbones
-from essl import losses
 from essl import datasets
 from essl import evaluate_downstream
 import time
@@ -49,16 +39,22 @@ class pretext_task:
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.device = device
-
-
-
-    def __call__(self, transform):
+    # D1: functionality of use of device, for parralelization compatibility (added)
+    def __call__(self,
+                 transform,
+                 device=None
+                 ):
+        if not device:
+            device = self.device
         model = self.model(self.backbone(self.seed))
         loss = model.fit(transform,
                   self.dataset,
                   self.batch_size,
                   self.num_epochs,
-                  self.device)
+                  #self.device
+                  # D2: self.device instead of device (for parralelization compatibility) add
+                  device
+                         )
         return model, loss
 
 
@@ -89,20 +85,26 @@ class fitness_function:
 
         self.dataset = datasets.__dict__[dataset](seed=seed)
         self.backbone = backbone
-        self.ssl_task = pretext_task(method=ssl_task,
-                                    dataset=self.dataset,
-                                    backbone=self.backbone,
-                                    num_epochs=ssl_epochs,
-                                    batch_size=ssl_batch_size,
-                                    device=device,
-                                    seed=self.seed
-                                    )
-        self.evaluate_downstream = evaluate_downstream.__dict__[evaluate_downstream_method](dataset=self.dataset,
-                                                                                             seed=seed,
-                                                                                            **evaluate_downstream_kwargs)
+        # D3: store hparams in the object as attributes (add)
+        self.ssl_epochs = ssl_epochs
+        self.ssl_batch_size = ssl_batch_size
+        self.evaluate_downstream_method = evaluate_downstream_method
+        self.evaluate_downstream_kwargs = evaluate_downstream_kwargs
+        self.ssl_task = ssl_task
         self.downstream_losses = {}
         self.device = device
-
+        self.ssl_task = pretext_task(method=self.ssl_task,
+                                dataset=self.dataset,
+                                backbone=self.backbone,
+                                num_epochs=self.ssl_epochs,
+                                batch_size=self.ssl_batch_size,
+                                device=self.device,
+                                seed=self.seed
+                                )
+        self.evaluate_downstream = evaluate_downstream.__dict__[self.evaluate_downstream_method](dataset=self.dataset,
+                                                                                                 seed=self.seed,
+                                                                                                 device=self.device,
+                                                                                                 **self.evaluate_downstream_kwargs)
 
 
     @staticmethod
@@ -116,12 +118,22 @@ class fitness_function:
 
     def clear_downstream_losses(self):
         self.downstream_losses = {}
-
-    def __call__(self, chromosome, return_losses=False):
+    # D4: include device for parralelization compatibility (add)
+    def __call__(self, chromosome,
+                 device=None,
+                 return_losses=False):
+        if not device:
+            device = self.device
         t1 = time.time()
         transform = self.gen_augmentation_torch(chromosome)
-        representation, ssl_losses = self.ssl_task(transform)
-        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation, report_all_metrics=True)
+
+        # D5: include device for parrallization compatibility (add)
+        representation, ssl_losses = self.ssl_task(transform,
+                                                   device=device
+                                                   )
+        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
+                                                                                                       # device=device,
+                                                                                                       report_all_metrics=True)
         print("time to eval: ", time.time() - t1)
         if return_losses:
             return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss

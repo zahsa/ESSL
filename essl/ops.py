@@ -1,15 +1,7 @@
 # FROM https://github.com/DeepVoltaire/AutoAugment/blob/master/ops.py
-from PIL import Image, ImageEnhance, ImageOps
-from torchvision.transforms import RandomAffine
-from torchvision.transforms.functional import (posterize,
-                                                solarize,
-                                                adjust_contrast,
-                                               adjust_sharpness)
 from torchvision.transforms import functional as F
 from torchvision.transforms import InterpolationMode
-from functools import partial
-from typing import List, Tuple, Optional, Dict
-import random
+from typing import List, Optional
 import math
 
 DEFAULT_OPS = {

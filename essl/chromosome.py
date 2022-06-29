@@ -2,14 +2,17 @@ from essl import ops
 import random
 from itertools import permutations
 
-
+# D1: discretized version of chromosomes (add)
 class chromosome_generator:
-    def __init__(self, augmentations=ops.DEFAULT_OPS, length=5, seed=10):
+    def __init__(self, augmentations=ops.DEFAULT_OPS,
+                 length=5, seed=10, discrete=False, intensity_increments=10):
         """
         :param augmentations: dict containing operation, magnitude pairs-
         """
         self.length = length
         self.augmentations = augmentations
+        self.discrete = discrete
+        self.intensity_increments = intensity_increments
         random.seed(seed)
         # encode augmentations as integer
         self.pheno2geno = {
@@ -34,16 +37,28 @@ class chromosome_generator:
                     ]
                 for chromo in self.search_space
         ]
-
+    # D2: add discrete option (added)
     def __call__(self):
         # representation = random permutation and random intensity
-        return [
+        if self.discrete:
+            chromosome = []
+            for k in random.sample(list(self.augmentations), self.length):
+                increment = abs(self.augmentations[k][1] - self.augmentations[k][0]) / self.intensity_increments
+                if isinstance(self.augmentations[k][0], float):
+                    intensity = float(round(random.choice(np.arange(*self.augmentations[k], increment, dtype=float)), 2))
+                else:
+                    intensity = int(random.choice(np.arange(*self.augmentations[k], increment, dtype=int)))
+                chromosome.append([k, intensity])
+        else:
+            chromosome =  [
             # gen a float or int based on range types
             [k, random.uniform(*self.augmentations[k])
                         if isinstance(self.augmentations[k][0], float)
                         else random.randint(*self.augmentations[k])]
             for k in random.sample(list(self.augmentations), self.length)
         ]
+
+        return chromosome
 
 
 if __name__ == "__main__":
