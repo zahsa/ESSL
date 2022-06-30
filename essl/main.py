@@ -42,7 +42,7 @@ from essl.utils import id_generator
 @click.option("--chromosome_length", default=5, type=int, help="number of genes in chromosome")
 # D2,3,4,5
 # elitism, adaptive probs, patience, discrete intensities
-# @click.option("--num_elite", default=2, type=int, help="number of elite chromosomes")
+@click.option("--num_elite", default=0, type=int, help="number of elite chromosomes")
 @click.option("--adaptive_pbs", default=False, type=bool, help="whether to use adaptive mut and cx pb")
 @click.option("--patience", default=-1, type=int, help="number of non-improving generations before early stopping")
 @click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
@@ -63,7 +63,7 @@ def main_cli(pop_size, num_generations,
                              use_tensorboard,
                              save_plots,
                              chromosome_length,
-                             # num_elite,
+                             num_elite,
                              adaptive_pbs,
                              patience,
                              discrete_intensity
@@ -85,7 +85,7 @@ def main_cli(pop_size, num_generations,
          use_tensorboard=use_tensorboard,
          save_plots=save_plots,
          chromosome_length=chromosome_length,
-         # num_elite=num_elite,
+         num_elite=num_elite,
          adaptive_pbs=adaptive_pbs,
          patience=patience,
          discrete_intensity=discrete_intensity
@@ -110,7 +110,7 @@ def main(pop_size, num_generations,
                              save_plots=True,
                              chromosome_length=5,
                              seed=10,
-                             # num_elite=2,
+                             num_elite=0,
                              adaptive_pbs=False,
                              patience = -1,
                              discrete_intensity=False
@@ -162,6 +162,8 @@ def main(pop_size, num_generations,
         toolbox.register("select", tools.selTournament, tournsize=3)
     elif selection == "SUS":
         toolbox.register("select", tools.selStochasticUniversalSampling)
+    elif selection == "roulette":
+        toolbox.register("select", tools.selRoulette)
 
     # init pop and fitnesses #
     pop = toolbox.population(n=pop_size)
@@ -186,30 +188,29 @@ def main(pop_size, num_generations,
     # evolution loop
     for g in range(num_generations):
         print("-- Generation %i --" % g)
-        # Select the next generation individuals
-        offspring = toolbox.select(pop, len(pop))
-        # Clone the selected individuals
-        offspring = list(map(toolbox.clone, offspring))
+        # D12: Elitism (not added at this point)
+        # sort offspring in descending order
+        # pop.sort(key=lambda x: x.fitness.values[0], reverse=True)
+        elite_indexes = sorted(range(len(pop)), key=lambda i: pop[i].fitness.values[0], reverse=True)[:num_elite]
+        elite = [pop[i] for i in elite_indexes]
+        non_elite = [pop[i] for i in range(len(pop)) if i not in elite_indexes]
 
+        # Select the next generation individuals
+        offspring = toolbox.select(non_elite, len(non_elite))
+        # Clone the selected individuals and elite individuals
+        offspring = list(map(toolbox.clone, offspring)) + list(map(toolbox.clone, elite))
+        random.shuffle(offspring)
         # D11: adaptive pbs (does not affect outcome if toggled off) (add)
         if adaptive_pbs:
             cxpb = 1 - ((g + 1) / num_generations)
             mutpb = ((g + 1) / num_generations)
-
-        # D12: Elitism (not added at this point)
-        # sort offspring in descending order
-        # offspring.sort(key=lambda x: x.fitness.values[0], reverse=True)
-        # elite = offspring[:num_elite]
-        # non_elite = offspring[num_elite:]
-        # random.shuffle(non_elite)
-
         # Apply crossover and mutation on the offspring
         # split list in two
 
         # D13: iterate through entire offspring rather than just non_elite (kept for now)
         # TODO: make elites crossover but not mutate
         # TODO: confirm default, no elite causes it to act as if entire pop
-
+        # UPDATE: entire population including both elite and non elite are mutated and crossed over
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
             if random.random() < cxpb:
                 toolbox.mate(child1, child2)
