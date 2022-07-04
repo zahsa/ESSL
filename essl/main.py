@@ -17,8 +17,8 @@ from essl.chromosome import chromosome_generator
 from essl import fitness
 from essl import mutate
 from essl.crossover import PMX
-# D1: Implemente cxOnePoint to have feasibility check
-# from essl.crossover import cxOnePoint
+# D1: add one point feasinility check
+from essl.crossover import onepoint_feas
 from essl.utils import id_generator
 
 
@@ -155,6 +155,8 @@ def main(pop_size, num_generations,
     # D8: onepoint crossover (added deaps version)
     elif crossover == "onepoint":
         toolbox.register("mate", tools.cxOnePoint)
+    elif crossover == 'onepoint_feas':
+        toolbox.register("mate", onepoint_feas)
     else:
         raise ValueError(f"invalid crossover ({crossover})")
     toolbox.register("mutate", mutate.mutGaussian, indpb=0.05)
@@ -200,10 +202,12 @@ def main(pop_size, num_generations,
         # Clone the selected individuals and elite individuals
         offspring = list(map(toolbox.clone, offspring)) + list(map(toolbox.clone, elite))
         random.shuffle(offspring)
-        # D11: adaptive pbs (does not affect outcome if toggled off) (add)
+        # D2: change adaptive probs to halve every 3 gens
         if adaptive_pbs:
-            cxpb = 1 - ((g + 1) / num_generations)
-            mutpb = ((g + 1) / num_generations)
+            # cxpb = 1 - ((g + 1) / num_generations)
+            if not g % 3 and g != 0:
+                mutpb/=2
+            # mutpb = ((g + 1) / num_generations)
         # Apply crossover and mutation on the offspring
         # split list in two
 
