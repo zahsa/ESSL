@@ -1,13 +1,6 @@
-"""
-perturbation of intensities
-    - must remain within the feasible space
-    - pre or post
-"""
-
-
 from essl.ops import DEFAULT_OPS
-import math
 import random
+import numpy as np
 
 from itertools import repeat
 
@@ -39,8 +32,9 @@ class MutateOperators:
             self.chromosome['intensity'] += noise
 
 
-
-def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10):
+# D1: add seed to mutgaussian (add)
+# D2: discretize mutation (add)
+def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10, discrete=False, intensity_increments=10):
     """
     DIrectly modified from source code to work with our chromosomes
 
@@ -60,7 +54,7 @@ def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10):
     This function uses the :func:`~random.random` and :func:`~random.gauss`
     functions from the python base :mod:`random` module.
     """
-    random.seed(10)
+    random.seed(seed)
     size = len(individual)
     if not isinstance(mu, Sequence):
         mu = repeat(mu, size)
@@ -70,17 +64,29 @@ def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10):
         sigma = repeat(sigma, size)
     elif len(sigma) < size:
         raise IndexError("sigma must be at least the size of individual: %d < %d" % (len(sigma), size))
+    if discrete:
+        for i, m, s in zip(range(size), mu, sigma):
+            if random.random() < indpb:
+                i_range = DEFAULT_OPS[individual[i][0]]
+                increment = abs(i_range[1] - i_range[0]) / intensity_increments
+                if isinstance(i_range[0], int):
+                    update = int(random.choice(np.arange(*i_range, increment, dtype=int)))
+                else:
+                    update = float(round(random.choice(np.arange(*i_range, increment, dtype=float)), 2))
 
-    for i, m, s in zip(range(size), mu, sigma):
-        if random.random() < indpb:
-            update = individual[i][1] + random.gauss(m, s)
-            # max out range
-            if update < DEFAULT_OPS[individual[i][0]][0]:
-                update = DEFAULT_OPS[individual[i][0]][0]
-            elif update > DEFAULT_OPS[individual[i][0]][1]:
-                update = DEFAULT_OPS[individual[i][0]][1]
-            individual[i][1] = update
+                individual[i][1] = update
+    else:
+        for i, m, s in zip(range(size), mu, sigma):
+            if random.random() < indpb:
+                update = individual[i][1] + random.gauss(m, s)
+                # max out range
+                if update < DEFAULT_OPS[individual[i][0]][0]:
+                    update = DEFAULT_OPS[individual[i][0]][0]
+                elif update > DEFAULT_OPS[individual[i][0]][1]:
+                    update = DEFAULT_OPS[individual[i][0]][1]
+                individual[i][1] = update
     return individual,
+
 
 
 
