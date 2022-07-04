@@ -60,8 +60,8 @@ def PMX(s,t, num_attempts=5):
     s[:], t[:] = offspring
     return offspring
 
-# D3: add feasibility check for one point crossover
-def cxOnePoint(ind1, ind2, n_tries=5):
+# D1: change name to onepoint_feas
+def onepoint_feas(ind1, ind2, n_tries=5):
     size = min(len(ind1), len(ind2))
     child1, child2 = ind1.copy(), ind2.copy()
     cxpoint = random.randint(1, size - 1)
