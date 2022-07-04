@@ -43,7 +43,7 @@ from essl.utils import id_generator
 # D2,3,4,5
 # elitism, adaptive probs, patience, discrete intensities
 @click.option("--num_elite", default=0, type=int, help="number of elite chromosomes")
-@click.option("--adaptive_pbs", default=False, type=bool, help="whether to use adaptive mut and cx pb")
+@click.option("--adaptive_pb", default=None, type=str, help="halving, generational")
 @click.option("--patience", default=-1, type=int, help="number of non-improving generations before early stopping")
 @click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
 
@@ -64,7 +64,7 @@ def main_cli(pop_size, num_generations,
                              save_plots,
                              chromosome_length,
                              num_elite,
-                             adaptive_pbs,
+                             adaptive_pb,
                              patience,
                              discrete_intensity
                              ):
@@ -86,7 +86,7 @@ def main_cli(pop_size, num_generations,
          save_plots=save_plots,
          chromosome_length=chromosome_length,
          num_elite=num_elite,
-         adaptive_pbs=adaptive_pbs,
+         adaptive_pb=adaptive_pb,
          patience=patience,
          discrete_intensity=discrete_intensity
          )
@@ -111,7 +111,7 @@ def main(pop_size, num_generations,
                              chromosome_length=5,
                              seed=10,
                              num_elite=0,
-                             adaptive_pbs=False,
+                             adaptive_pb=None,
                              patience = -1,
                              discrete_intensity=False
                             ):
@@ -190,9 +190,8 @@ def main(pop_size, num_generations,
     # evolution loop
     for g in range(num_generations):
         print("-- Generation %i --" % g)
-        # D12: Elitism (not added at this point)
+
         # sort offspring in descending order
-        # pop.sort(key=lambda x: x.fitness.values[0], reverse=True)
         elite_indexes = sorted(range(len(pop)), key=lambda i: pop[i].fitness.values[0], reverse=True)[:num_elite]
         elite = [pop[i] for i in elite_indexes]
         non_elite = [pop[i] for i in range(len(pop)) if i not in elite_indexes]
@@ -203,18 +202,18 @@ def main(pop_size, num_generations,
         offspring = list(map(toolbox.clone, offspring)) + list(map(toolbox.clone, elite))
         random.shuffle(offspring)
         # D2: change adaptive probs to halve every 3 gens
-        if adaptive_pbs:
-            # cxpb = 1 - ((g + 1) / num_generations)
-            if not g % 3 and g != 0:
-                mutpb/=2
-            # mutpb = ((g + 1) / num_generations)
+        if adaptive_pb:
+            if adaptive_pb == "halving":
+                # drop_rate = 0.5, gen_drop = 3
+                if not g % 3 and g != 0:
+                    mutpb/=2
+            elif adaptive_pb == "generational":
+                cxpb = 1 - ((g + 1) / num_generations)
+                mutpb = ((g + 1) / num_generations)
+            else:
+                raise ValueError(f"invalid adaptive_pb value: {adaptive_pb}")
         # Apply crossover and mutation on the offspring
         # split list in two
-
-        # D13: iterate through entire offspring rather than just non_elite (kept for now)
-        # TODO: make elites crossover but not mutate
-        # TODO: confirm default, no elite causes it to act as if entire pop
-        # UPDATE: entire population including both elite and non elite are mutated and crossed over
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
             if random.random() < cxpb:
                 toolbox.mate(child1, child2)
@@ -230,11 +229,6 @@ def main(pop_size, num_generations,
                 # generate new id for mutant
                 mutant.id = next(id_gen)
                 del mutant.fitness.values
-
-        # D13: when using elitism we combine here
-        # combine non elite and elite
-        # offspring = elite + non_elite
-
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
         fitnesses = map(toolbox.evaluate, invalid_ind)
@@ -289,10 +283,8 @@ def main(pop_size, num_generations,
         outcomes["avg"].append(mean)
         outcomes["std"].append(std)
         outcomes["pop_vals"]+=[[g, f] for f in fits]
-        # D15: record chromos (add)
         outcomes["chromos"] += [[g, c] for c in pop]
 
-        # D16: early stopping (added, by default will never break)
         # early stopping
         if history[-1] > history[-2]:
             no_improvement_count = 0
@@ -310,8 +302,6 @@ def main(pop_size, num_generations,
                 sns.boxplot(data=pd.DataFrame(outcomes[m], columns=["gen", "fitness"]), x="gen", y="fitness")
                 plt.savefig(os.path.join(plot_dir, f"{m}.png"))
                 plt.clf()
-
-            # D17: continue over chromos (add)
             elif m == "chromos":
                 continue
             else:
@@ -319,7 +309,6 @@ def main(pop_size, num_generations,
                 sns.lineplot(list(range(len(values))), values)
                 plt.savefig(os.path.join(plot_dir, f"{m}.png"))
                 plt.clf()
-    # D18: save outcomes
     with open(os.path.join(exp_dir, "outcomes.json"), "w") as f:
         json.dump(outcomes, f)
 
@@ -327,12 +316,13 @@ def main(pop_size, num_generations,
 if __name__ == "__main__":
     import time
     t1 = time.time()
-    main(pop_size=4,
+    main(pop_size=2,
          ssl_epochs=1,
-         num_generations=2,
+         num_generations=1,
          backbone="tinyCNN_backbone",
-         exp_dir="/home/noah/ESSL/experiments/test_3",
+         exp_dir="/home/noah/ESSL/exps/testing/t1",
          evaluate_downstream_kwargs={"num_epochs":1},
-         crossover="PMX"
+         crossover="onepoint",
+         adaptive_pb="generational"
          )
     print(f"TOOK {time.time()-t1} to run")
