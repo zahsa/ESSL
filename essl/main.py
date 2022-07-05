@@ -299,7 +299,9 @@ def main(pop_size, num_generations,
             os.mkdir(plot_dir)
         for m in outcomes:
             if m == "pop_vals":
-                sns.boxplot(data=pd.DataFrame(outcomes[m], columns=["gen", "fitness"]), x="gen", y="fitness")
+                ax = sns.boxplot(data=pd.DataFrame(outcomes[m], columns=["gen", "fitness"]), x="gen", y="fitness", color='skyblue')
+                ax.set_xlabel("Generation")
+                ax.set_ylabel("Fitness")
                 plt.savefig(os.path.join(plot_dir, f"{m}.png"))
                 plt.clf()
             elif m == "chromos":
