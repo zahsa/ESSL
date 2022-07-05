@@ -78,7 +78,7 @@ def cxOnePoint(ind1, ind2, n_tries=5):
             child2 = ind2
             break
     ind1[:], ind2[:] = child1[:], child2[:]
-    return child1, child2
+    return ind1, ind2
 
 if __name__ == "__main__":
     from essl.chromosome import chromosome_generator

@@ -83,7 +83,7 @@ def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10, discrete=False,
                 if update < DEFAULT_OPS[individual[i][0]][0]:
                     update = DEFAULT_OPS[individual[i][0]][0]
                 elif update > DEFAULT_OPS[individual[i][0]][1]:
-                    update = DEFAULT_OPS[individual[i][0]][1]
+                    update = DEFAULT_OPS[individua.augmentationl[i][0]][1]
                 individual[i][1] = update
     return individual,
 

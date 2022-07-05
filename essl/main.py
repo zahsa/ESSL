@@ -13,25 +13,28 @@ sns.set_theme()
 import json
 
 
-from essl.chromosome import chromosome_generator
+from essl.chromosome import chromosome_generator, chromo, SSL_TASKS
 from essl import fitness
 from essl import mutate
 from essl.crossover import PMX
 # D1: Implemente cxOnePoint to have feasibility check
-# from essl.crossover import cxOnePoint
+from essl.crossover import cxOnePoint
 from essl.utils import id_generator
 
-
+# D1: remove option for SSL task in main function
+# D2: add mut and cx prob 2 for ssl task
 @click.command()
 @click.option("--pop_size", type=int, help="size of population")
 @click.option("--num_generations",type=int, help="number of generations")
-@click.option("--cxpb", default=0.2,type=float, help="probability of crossover")
-@click.option("--mutpb", default=0.5,type=float, help="probability of mutation")
+@click.option("--cxpb1", default=0.2,type=float, help="probability of crossover for aug")
+@click.option("--mutpb1", default=0.5,type=float, help="probability of mutation for aug")
+@click.option("--cxpb2", default=0.2,type=float, help="probability of crossover for ssl task")
+@click.option("--mutpb2", default=0.5,type=float, help="probability of mutation for ssl task")
 @click.option("--crossover", default="PMX",type=str, help="type of crossover (PMX, twopoint, onepoint)")
 @click.option("--selection", default="SUS",type=str, help="type of selection (SUS, tournament)")
 @click.option("--dataset", default="Cifar10",type=str, help="data set to use (Cifar10, )")
 @click.option("--backbone", default="ResNet18_backbone",type=str, help="backbone to use (ResNet18_backbone, tinyCNN_backbone, largerCNN_backbone)")
-@click.option("--ssl_task", default="SimCLR", type=str, help="SSL method (SimCLR)")
+# @click.option("--ssl_task", default="SimCLR", type=str, help="SSL method (SimCLR)")
 @click.option("--ssl_epochs", default=10, type=int, help="number of epochs for ssl task")
 @click.option("--ssl_batch_size", default=256, type=int, help="batch size for ssl task")
 @click.option("--evaluate_downstream_method", default="finetune", type=str, help="method of evaluation of ssl representation (finetune)")
@@ -48,13 +51,15 @@ from essl.utils import id_generator
 @click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
 
 def main_cli(pop_size, num_generations,
-                             cxpb,
-                             mutpb,
+                             cxpb1,
+                             mutpb1,
+                             cxpb2,
+                             mutpb2,
                              crossover,
                              selection,
                              dataset,
                              backbone,
-                             ssl_task,
+                             # ssl_task,
                              ssl_epochs,
                              ssl_batch_size,
                              evaluate_downstream_method,
@@ -70,13 +75,15 @@ def main_cli(pop_size, num_generations,
                              ):
     main(pop_size=pop_size,
          num_generations=num_generations,
-         cxpb=cxpb,
-         mutpb=mutpb,
+         cxpb1=cxpb1,
+         mutpb1=mutpb1,
+         cxpb2=cxpb2,
+         mutpb2=mutpb2,
          crossover=crossover,
          selection=selection,
          dataset=dataset,
          backbone=backbone,
-         ssl_task=ssl_task,
+         # ssl_task=ssl_task,
          ssl_epochs=ssl_epochs,
          ssl_batch_size=ssl_batch_size,
          evaluate_downstream_method=evaluate_downstream_method,
@@ -93,13 +100,15 @@ def main_cli(pop_size, num_generations,
 
 
 def main(pop_size, num_generations,
-                             cxpb =  0.2,
-                             mutpb = 0.5,
+                             cxpb1 =  0.2,
+                             mutpb1 = 0.5,
+                             cxpb2 =  0.2,
+                             mutpb2 = 0.5,
                              crossover = "PMX",
                              selection = "SUS",
                              dataset="Cifar10",
                              backbone="tinyCNN_backbone",
-                             ssl_task="SimCLR",
+                             # ssl_task="SimCLR",
                              ssl_epochs=1,
                              ssl_batch_size=256,
                              evaluate_downstream_method="finetune",
@@ -130,8 +139,8 @@ def main(pop_size, num_generations,
     # init algo #
     toolbox = base.Toolbox()
     creator.create("Fitness", base.Fitness, weights=(100.0,)) # maximize accuracy
-    creator.create("Individual", list, fitness=creator.Fitness, id=None)
-    # D7: add discrete option to chromo generator (add)
+    creator.create("Individual", chromo, fitness=creator.Fitness, id=None)
+    # D2: add ssl task as part of chromosome
     toolbox.register("gen_aug", chromosome_generator(length=chromosome_length,
                                                      discrete=discrete_intensity,
                                                      seed=seed))
@@ -140,7 +149,6 @@ def main(pop_size, num_generations,
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     eval = fitness.fitness_function(dataset=dataset,
                                      backbone=backbone,
-                                     ssl_task=ssl_task,
                                      ssl_epochs=ssl_epochs,
                                      ssl_batch_size=ssl_batch_size,
                                      evaluate_downstream_method=evaluate_downstream_method,
@@ -154,7 +162,7 @@ def main(pop_size, num_generations,
         toolbox.register("mate", tools.cxTwoPoint)
     # D8: onepoint crossover (added deaps version)
     elif crossover == "onepoint":
-        toolbox.register("mate", tools.cxOnePoint)
+        toolbox.register("mate", cxOnePoint)
     else:
         raise ValueError(f"invalid crossover ({crossover})")
     toolbox.register("mutate", mutate.mutGaussian, indpb=0.05)
@@ -177,7 +185,7 @@ def main(pop_size, num_generations,
        ind.fitness.values = fit
     # D9: record chromosomes information
     outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std", "chromos"]}
-
+    import pdb;pdb.set_trace()
     # D10: early stopping (added, by default will never stop (default val = -1))
     max_ind = pop[0].fitness.values[0]
     for ind in pop:
@@ -212,20 +220,29 @@ def main(pop_size, num_generations,
         # TODO: confirm default, no elite causes it to act as if entire pop
         # UPDATE: entire population including both elite and non elite are mutated and crossed over
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
-            if random.random() < cxpb:
+            if random.random() < cxpb1:
                 toolbox.mate(child1, child2)
                 # generate new ids for children
                 child1.id = next(id_gen)
                 child2.id = next(id_gen)
                 del child1.fitness.values
                 del child2.fitness.values
+            if random.random() < cxpb2:
+                # swap ssl tasks
+                c2_task = child2.ssl_task
+                child2.ssl_task = child1.ssl_task
+                child1.ssl_task = c2_task
 
         for mutant in offspring:
-            if random.random() < mutpb:
+            if random.random() < mutpb1:
                 toolbox.mutate(mutant)
                 # generate new id for mutant
                 mutant.id = next(id_gen)
                 del mutant.fitness.values
+
+            # randomly switch SSL task
+            if random.random() < mutpb2:
+                mutant.ssl_task = random.choice(SSL_TASKS)
 
         # D13: when using elitism we combine here
         # combine non elite and elite
@@ -327,8 +344,8 @@ if __name__ == "__main__":
          ssl_epochs=1,
          num_generations=2,
          backbone="tinyCNN_backbone",
-         exp_dir="/home/noah/ESSL/experiments/test_3",
+         exp_dir="/home/noah/ESSL/exps/iteration1/test_4",
          evaluate_downstream_kwargs={"num_epochs":1},
-         crossover="PMX"
+         crossover="onepoint"
          )
     print(f"TOOK {time.time()-t1} to run")

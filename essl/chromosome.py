@@ -1,8 +1,27 @@
 from essl import ops
 import random
 from itertools import permutations
+"""
+New chromosome representation:
 
-# D1: discretized version of chromosomes (add)
+contains both intensities and the ssl task
+
+
+"""
+
+SSL_TASKS = [
+                "NNCLR",
+                "SimCLR",
+                "SwaV",
+                "BYOL"
+]
+
+class chromo(list):
+    def __init__(self, ssl_task
+                 ):
+        self.ssl_task = ssl_task
+        #self.augmentation = augmentation
+
 class chromosome_generator:
     def __init__(self, augmentations=ops.DEFAULT_OPS,
                  length=5, seed=10, discrete=False, intensity_increments=10):
@@ -37,11 +56,11 @@ class chromosome_generator:
                     ]
                 for chromo in self.search_space
         ]
-    # D2: add discrete option (added)
+    # D1: add ssl task as part of chromosome
     def __call__(self):
+        chromosome = chromo(ssl_task=random.choice(SSL_TASKS))
         # representation = random permutation and random intensity
         if self.discrete:
-            chromosome = []
             for k in random.sample(list(self.augmentations), self.length):
                 increment = abs(self.augmentations[k][1] - self.augmentations[k][0]) / self.intensity_increments
                 if isinstance(self.augmentations[k][0], float):
@@ -50,14 +69,18 @@ class chromosome_generator:
                     intensity = int(random.choice(np.arange(*self.augmentations[k], increment, dtype=int)))
                 chromosome.append([k, intensity])
         else:
-            chromosome =  [
-            # gen a float or int based on range types
-            [k, random.uniform(*self.augmentations[k])
-                        if isinstance(self.augmentations[k][0], float)
-                        else random.randint(*self.augmentations[k])]
-            for k in random.sample(list(self.augmentations), self.length)
-        ]
-
+            for k in random.sample(list(self.augmentations), self.length):
+                if isinstance(self.augmentations[k][0], float):
+                    chromosome.append([k, random.uniform(*self.augmentations[k])])
+                else:
+                    chromosome.append([k, random.randint(*self.augmentations[k])])
+            # augmentation = [
+            # # gen a float or int based on range types
+            # [k, random.uniform(*self.augmentations[k])
+            #             if isinstance(self.augmentations[k][0], float)
+            #             else random.randint(*self.augmentations[k])]
+            # for k in random.sample(list(self.augmentations), self.length)
+            # ]
         return chromosome
 
 
