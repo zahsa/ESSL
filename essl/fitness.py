@@ -116,7 +116,6 @@ class fitness_function:
         if not device:
             device = self.device
         # D2: make pretext task within eval call
-        import pdb;pdb.set_trace()
         ssl_task = pretext_task(method=chromosome[0],
                                      dataset=self.dataset,
                                      backbone=self.backbone,

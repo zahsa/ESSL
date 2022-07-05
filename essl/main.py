@@ -187,7 +187,7 @@ def main(pop_size, num_generations,
        ind.fitness.values = fit
     # D9: record chromosomes information
     outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std", "chromos"]}
-    import pdb;pdb.set_trace()
+    # import pdb;pdb.set_trace()
     # D10: early stopping (added, by default will never stop (default val = -1))
     max_ind = pop[0].fitness.values[0]
     for ind in pop:
@@ -340,9 +340,9 @@ if __name__ == "__main__":
     t1 = time.time()
     main(pop_size=4,
          ssl_epochs=1,
-         num_generations=2,
+         num_generations=3,
          backbone="tinyCNN_backbone",
-         exp_dir="/home/noah/ESSL/exps/iteration1/test_4",
+         exp_dir="/home/noah/ESSL/exps/testing/ssl_gene",
          evaluate_downstream_kwargs={"num_epochs":1},
          crossover="onepoint"
          )
