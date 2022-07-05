@@ -8,7 +8,7 @@ contains both intensities and the ssl task
 
 
 """
-
+# D1: include SSL tasks
 SSL_TASKS = [
                 "NNCLR",
                 "SimCLR",
@@ -56,7 +56,8 @@ class chromosome_generator:
                     ]
                 for chromo in self.search_space
         ]
-    # D1: add ssl task as part of chromosome
+    # D2: add ssl task as part of chromosome
+    # chromo is a list with an attribute containing ssl task
     def __call__(self):
         chromosome = chromo(ssl_task=random.choice(SSL_TASKS))
         # representation = random permutation and random intensity

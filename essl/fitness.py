@@ -59,13 +59,14 @@ class pretext_task:
 
 
 
-# D1: remove ssl task as option for fitness function
+
 class fitness_function:
     """
     proposed approach:
     wrap above workflow in a class to store global aspects of the evaluation such as
     dataset and hparams
     """
+    # D1: remove ssl task as option from fitness function
     def __init__(self,
                  dataset: str,
                  backbone: str,
@@ -114,7 +115,7 @@ class fitness_function:
                  return_losses=False):
         if not device:
             device = self.device
-        # D: make pretext task within eval call
+        # D2: make pretext task within eval call
         import pdb;pdb.set_trace()
         ssl_task = pretext_task(method=chromosome.ssl_task,
                                      dataset=self.dataset,
@@ -125,7 +126,7 @@ class fitness_function:
                                      seed=self.seed
                                      )
         t1 = time.time()
-        # D: chromosome now contains aug attribute
+        # D3: chromosome now contains aug attribute
         transform = self.gen_augmentation_torch(chromosome.augmentation)
         representation, ssl_losses = ssl_task(transform,
                                                    device=device
@@ -148,7 +149,7 @@ if __name__ == "__main__":
     print("seed: ", torch.seed())
     fitness = fitness_function(dataset="Cifar10",
                                  backbone="largerCNN_backbone",
-                                 ssl_task="SwaV",
+                                 # ssl_task="SwaV",
                                  ssl_epochs=1,
                                  ssl_batch_size=64,
                                  evaluate_downstream_method="finetune",
