@@ -16,10 +16,10 @@ SSL_TASKS = [
                 "BYOL"
 ]
 
-class chromo(list):
-    def __init__(self, ssl_task
-                 ):
-        self.ssl_task = ssl_task
+# class chromo(list):
+#     def __init__(self, ssl_task
+#                  ):
+#         self.ssl_task = ssl_task
         #self.augmentation = augmentation
 
 class chromosome_generator:
@@ -56,10 +56,11 @@ class chromosome_generator:
                     ]
                 for chromo in self.search_space
         ]
-    # D2: add ssl task as part of chromosome
+    # D1: FIRST entry in list is the SSL gene
     # chromo is a list with an attribute containing ssl task
     def __call__(self):
-        chromosome = chromo(ssl_task=random.choice(SSL_TASKS))
+        # chromosome = chromo(ssl_task=random.choice(SSL_TASKS))
+        chromosome= [random.choice(SSL_TASKS)]
         # representation = random permutation and random intensity
         if self.discrete:
             for k in random.sample(list(self.augmentations), self.length):

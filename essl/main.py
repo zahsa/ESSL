@@ -13,7 +13,7 @@ sns.set_theme()
 import json
 
 # D1: new imports from chromosome
-from essl.chromosome import chromosome_generator, chromo, SSL_TASKS
+from essl.chromosome import chromosome_generator, SSL_TASKS
 from essl import fitness
 from essl import mutate
 from essl.crossover import PMX
@@ -139,7 +139,7 @@ def main(pop_size, num_generations,
     # init algo #
     toolbox = base.Toolbox()
     creator.create("Fitness", base.Fitness, weights=(100.0,)) # maximize accuracy
-    creator.create("Individual", chromo, fitness=creator.Fitness, id=None)
+    creator.create("Individual", list, fitness=creator.Fitness, id=None)
     # D2: add ssl task as part of chromosome
     toolbox.register("gen_aug", chromosome_generator(length=chromosome_length,
                                                      discrete=discrete_intensity,

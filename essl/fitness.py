@@ -117,7 +117,7 @@ class fitness_function:
             device = self.device
         # D2: make pretext task within eval call
         import pdb;pdb.set_trace()
-        ssl_task = pretext_task(method=chromosome.ssl_task,
+        ssl_task = pretext_task(method=chromosome[0],
                                      dataset=self.dataset,
                                      backbone=self.backbone,
                                      num_epochs=self.ssl_epochs,
@@ -126,8 +126,8 @@ class fitness_function:
                                      seed=self.seed
                                      )
         t1 = time.time()
-        # D3: chromosome now contains aug attribute
-        transform = self.gen_augmentation_torch(chromosome.augmentation)
+        # D3: chromosome consists of first ssl task and then aug
+        transform = self.gen_augmentation_torch(chromosome[1:])
         representation, ssl_losses = ssl_task(transform,
                                                    device=device
                                                    )

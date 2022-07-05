@@ -62,8 +62,8 @@ def PMX(s,t, num_attempts=5):
 
 # D1: change name to onepoint_feas
 def onepoint_feas(ind1, ind2, n_tries=5):
-    size = min(len(ind1), len(ind2))
-    child1, child2 = ind1.copy(), ind2.copy()
+    size = min(len(ind1[1:]), len(ind2[1:]))
+    child1, child2 = ind1[1:].copy(), ind2[1:].copy()
     cxpoint = random.randint(1, size - 1)
     child1[cxpoint:], child2[cxpoint:] = child2[cxpoint:], child1[cxpoint:]
     total = 0
@@ -74,10 +74,10 @@ def onepoint_feas(ind1, ind2, n_tries=5):
         child1[cxpoint:], child2[cxpoint:] = child2[cxpoint:], child1[cxpoint:]
         total+=1
         if total == n_tries:
-            child1 = ind1
-            child2 = ind2
+            child1 = ind1[1:]
+            child2 = ind2[1:]
             break
-    ind1[:], ind2[:] = child1[:], child2[:]
+    ind1[1:], ind2[1:] = child1[:], child2[:]
     return ind1, ind2
 
 if __name__ == "__main__":

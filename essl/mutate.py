@@ -65,7 +65,7 @@ def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10, discrete=False,
     elif len(sigma) < size:
         raise IndexError("sigma must be at least the size of individual: %d < %d" % (len(sigma), size))
     if discrete:
-        for i, m, s in zip(range(size), mu, sigma):
+        for i, m, s in zip(range(1, size), mu, sigma):
             if random.random() < indpb:
                 i_range = DEFAULT_OPS[individual[i][0]]
                 increment = abs(i_range[1] - i_range[0]) / intensity_increments
@@ -76,7 +76,7 @@ def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10, discrete=False,
 
                 individual[i][1] = update
     else:
-        for i, m, s in zip(range(size), mu, sigma):
+        for i, m, s in zip(range(1, size), mu, sigma):
             if random.random() < indpb:
                 update = individual[i][1] + random.gauss(m, s)
                 # max out range
