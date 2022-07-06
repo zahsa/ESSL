@@ -70,11 +70,13 @@ def mutGaussian(individual,  mu=0, sigma=1, indpb=0.05, seed=10, discrete=False,
                 i_range = DEFAULT_OPS[individual[i][0]]
                 increment = abs(i_range[1] - i_range[0]) / intensity_increments
                 if isinstance(i_range[0], int):
-                    update = int(random.choice(np.arange(*i_range, increment, dtype=int)))
+                    # update = int(random.choice(np.arange(*i_range, increment, dtype=int)))
+                    update =  int((random.choice([-1, 1]) * increment) + individual[i][1])
                 else:
-                    update = float(round(random.choice(np.arange(*i_range, increment, dtype=float)), 2))
-
-                individual[i][1] = update
+                    # update = float(round(random.choice(np.arange(*i_range, increment, dtype=float)), 2))
+                    update = float(round((random.choice([-1, 1]) * increment) + individual[i][1], 2))
+                if update <= DEFAULT_OPS[individual[i][0]][1] and update >= DEFAULT_OPS[individual[i][0]][0]:
+                    individual[i][1] = update
     else:
         for i, m, s in zip(range(size), mu, sigma):
             if random.random() < indpb:
