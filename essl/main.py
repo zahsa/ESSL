@@ -1,5 +1,5 @@
-import random
 import click
+import random
 from deap import base
 from deap import creator
 from deap import tools
@@ -181,13 +181,13 @@ def main(pop_size, num_generations,
     id_gen = id_generator()
     for ind in pop:
         ind.id = next(id_gen)
-
+    toolbox.evaluate(pop[2])
     fitnesses = list(map(toolbox.evaluate, pop))
     for ind, fit in zip(pop, fitnesses):
        ind.fitness.values = fit
     # D9: record chromosomes information
     outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std", "chromos"]}
-    # import pdb;pdb.set_trace()
+
     # D10: early stopping (added, by default will never stop (default val = -1))
     max_ind = pop[0].fitness.values[0]
     for ind in pop:
@@ -214,10 +214,10 @@ def main(pop_size, num_generations,
             if adaptive_pb == "halving":
                 # drop_rate = 0.5, gen_drop = 3
                 if not g % 3 and g != 0:
-                    mutpb/=2
+                    mutpb1/=2
             elif adaptive_pb == "generational":
-                cxpb = 1 - ((g + 1) / num_generations)
-                mutpb = ((g + 1) / num_generations)
+                cxpb1 = 1 - ((g + 1) / num_generations)
+                mutpb1 = ((g + 1) / num_generations)
             else:
                 raise ValueError(f"invalid adaptive_pb value: {adaptive_pb}")
         # Apply crossover and mutation on the offspring
@@ -233,9 +233,9 @@ def main(pop_size, num_generations,
             # D4: cx of ssl gene
             if random.random() < cxpb2:
                 # swap ssl tasks
-                c2_task = child2.ssl_task
-                child2.ssl_task = child1.ssl_task
-                child1.ssl_task = c2_task
+                c2_task = child2[0]
+                child2[0] = child1[0]
+                child1[0] = c2_task
 
         for mutant in offspring:
             if random.random() < mutpb1:
@@ -341,7 +341,7 @@ if __name__ == "__main__":
     main(pop_size=4,
          ssl_epochs=1,
          num_generations=3,
-         backbone="tinyCNN_backbone",
+         backbone="largerCNN_backbone",
          exp_dir="/home/noah/ESSL/exps/testing/ssl_gene",
          evaluate_downstream_kwargs={"num_epochs":1},
          crossover="onepoint"

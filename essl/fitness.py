@@ -133,6 +133,7 @@ class fitness_function:
         train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
                                                                                                        # device=device,
                                                                                                        report_all_metrics=True)
+
         print("time to eval: ", time.time() - t1)
         if return_losses:
             return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss

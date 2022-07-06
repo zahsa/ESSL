@@ -119,6 +119,7 @@ class SwaV(nn.Module):
             for batch, _, _ in dataloader:
                 self.prototypes.normalize()
                 multi_crop_features = [self(x.to(device)) for x in batch]
+
                 high_resolution = multi_crop_features[:2]
                 low_resolution = multi_crop_features[2:]
                 loss = criterion(high_resolution, low_resolution)
