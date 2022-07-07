@@ -181,12 +181,24 @@ def main(pop_size, num_generations,
     outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std", "chromos"]}
 
     # D10: early stopping (added, by default will never stop (default val = -1))
-    max_ind = pop[0].fitness.values[0]
+    max_ind = pop[0]
     for ind in pop:
-        if ind.fitness.values[0] > max_ind:
-            max_ind = ind.fitness.values[0]
-    history = [max_ind]
+        if ind.fitness.values[0] > max_ind.fitness.values[0]:
+            max_ind = ind
+
+    min_ind = pop[0]
+    for ind in pop:
+        if ind.fitness.values[0] < min_ind.fitness.values[0]:
+            min_ind = ind
+        elif ind.fitness.values[0] > max_ind.fitness.values[0]:
+            max_ind = ind
+    history = [max_ind.fitness.values[0]]
     no_improvement_count = 0
+
+    mean = sum([f[0] for f in fitnesses]) / len(fitnesses)
+    min_f = min_ind.fitness.values[0]
+    max_f = max_ind.fitness.values[0]
+
     # evolution loop
     for g in range(num_generations):
         print("-- Generation %i --" % g)
@@ -210,11 +222,20 @@ def main(pop_size, num_generations,
             elif adaptive_pb == "generational":
                 cxpb = 1 - ((g + 1) / num_generations)
                 mutpb = ((g + 1) / num_generations)
+            elif adaptive_pb == "AGA":
+                pass
             else:
                 raise ValueError(f"invalid adaptive_pb value: {adaptive_pb}")
         # Apply crossover and mutation on the offspring
         # split list in two
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
+            if adaptive_pb == "AGA":
+                f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
+                if f_p >= mean:
+                    cxpb = (max_f - f_p) / (max_f - mean)
+                else:
+                    cxpb = 1
+
             if random.random() < cxpb:
                 toolbox.mate(child1, child2)
                 # generate new ids for children
@@ -224,6 +245,12 @@ def main(pop_size, num_generations,
                 del child2.fitness.values
 
         for mutant in offspring:
+            if adaptive_pb == "AGA":
+                # modify mutpb
+                if mutant.fitness.values[0] >= mean:
+                    mutpb = (0.5 * (max_f - mutant.fitness.values[0])) / (max_f - mean)
+                else:
+                    mutpb = 0.5
             if random.random() < mutpb:
                 toolbox.mutate(mutant)
                 # generate new id for mutant
@@ -238,8 +265,8 @@ def main(pop_size, num_generations,
         # Gather all the fitnesses in one list and print the stats
         fits = [ind.fitness.values[0] for ind in pop]
 
-        max_ind = pop[0]
         min_ind = pop[0]
+        max_ind = pop[0]
         for ind in pop:
             if ind.fitness.values[0] < min_ind.fitness.values[0]:
                 min_ind = ind
@@ -321,10 +348,10 @@ if __name__ == "__main__":
     main(pop_size=2,
          ssl_epochs=1,
          num_generations=1,
-         backbone="tinyCNN_backbone",
-         exp_dir="/home/noah/ESSL/exps/testing/t1",
+         backbone="largerCNN_backbone",
+         exp_dir="/home/noah/ESSL/exps/testing/adaptive",
          evaluate_downstream_kwargs={"num_epochs":1},
          crossover="onepoint",
-         adaptive_pb="generational"
+         adaptive_pb="AGA"
          )
     print(f"TOOK {time.time()-t1} to run")
