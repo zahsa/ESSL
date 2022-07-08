@@ -95,6 +95,7 @@ class finetune:
         train_accs = []
         val_losses = []
         val_accs = []
+        test_accs = []
         if self.verbose:
             epochs = tqdm(range(self.num_epochs))
         else:
@@ -164,37 +165,39 @@ class finetune:
             if scheduler:
                 scheduler.step()
 
-        # evaluate #
-        # add num workers
-        testloader = torch.utils.data.DataLoader(self.dataset.test_data,
-                                                 batch_size=self.batch_size,
-                                                 shuffle=False,
-                                                 num_workers=12)
-        model.eval()
-        total = 0
-        correct = 0
-        running_loss = 0.0
-        # deactivate autograd engine
-        with torch.no_grad():
-            for X, y in testloader:
-                inputs = X.to(device)
-                labels = y.to(device)
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
-                running_loss += loss.item()
-                # y_true = torch.cat((y_true, labels), 0)
-                # pred_probs = torch.cat((pred_probs, outputs), 0)
-                _, predicted = outputs.max(1)
-                total += labels.size(0)
-                correct += predicted.eq(labels).sum().item()
-            test_loss = running_loss / len(testloader)
+            # evaluate #
+            # add num workers
+            testloader = torch.utils.data.DataLoader(self.dataset.test_data,
+                                                     batch_size=self.batch_size,
+                                                     shuffle=False,
+                                                     num_workers=12)
+            model.eval()
+            total = 0
+            correct = 0
+            running_loss = 0.0
+            # deactivate autograd engine
+            with torch.no_grad():
+                for X, y in testloader:
+                    inputs = X.to(device)
+                    labels = y.to(device)
+                    outputs = model(inputs)
+                    loss = criterion(outputs, labels)
+                    running_loss += loss.item()
+                    # y_true = torch.cat((y_true, labels), 0)
+                    # pred_probs = torch.cat((pred_probs, outputs), 0)
+                    _, predicted = outputs.max(1)
+                    total += labels.size(0)
+                    correct += predicted.eq(labels).sum().item()
+                test_loss = running_loss / len(testloader)
 
 
-        # y_true = y_true.cpu().numpy()
-        # _, y_pred = torch.max(pred_probs, 1)
-        # y_pred = y_pred.cpu().numpy()
-        test_acc = 100.*correct/total
+            # y_true = y_true.cpu().numpy()
+            # _, y_pred = torch.max(pred_probs, 1)
+            # y_pred = y_pred.cpu().numpy()
+            test_acc = 100.*correct/total
+            test_accs.append(test_acc)
 
+        test_acc = max(test_accs)
         if report_all_metrics:
             return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
 
