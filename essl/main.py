@@ -228,6 +228,7 @@ def main(pop_size, num_generations,
                 raise ValueError(f"invalid adaptive_pb value: {adaptive_pb}")
         # Apply crossover and mutation on the offspring
         # split list in two
+        parents = []
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
             if adaptive_pb == "AGA":
                 f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
@@ -237,6 +238,8 @@ def main(pop_size, num_generations,
                     cxpb = 1
 
             if random.random() < cxpb:
+                parents.append(child1.id)
+                parents.append(child2.id)
                 toolbox.mate(child1, child2)
                 # generate new ids for children
                 child1.id = next(id_gen)
@@ -246,6 +249,9 @@ def main(pop_size, num_generations,
 
         for mutant in offspring:
             if adaptive_pb == "AGA":
+                # if child was just created this round, mutate
+                if mutant.id in parents:
+                    continue
                 # modify mutpb
                 if mutant.fitness.values[0] >= mean:
                     mutpb = (0.5 * (max_f - mutant.fitness.values[0])) / (max_f - mean)
