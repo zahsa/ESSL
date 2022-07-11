@@ -17,7 +17,7 @@ from essl.chromosome import chromosome_generator
 from essl import fitness
 from essl import mutate
 from essl.crossover import PMX
-# D1: add one point feasinility check
+# D1: add one point feasibility check
 from essl.crossover import onepoint_feas
 from essl.utils import id_generator
 
@@ -256,6 +256,7 @@ def main(pop_size, num_generations,
                 # generate new id for mutant
                 mutant.id = next(id_gen)
                 del mutant.fitness.values
+
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
         fitnesses = map(toolbox.evaluate, invalid_ind)

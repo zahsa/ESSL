@@ -1,6 +1,7 @@
 from essl import ops
 import random
 from itertools import permutations
+import numpy as np
 
 # D1: discretized version of chromosomes (add)
 class chromosome_generator:

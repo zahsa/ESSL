@@ -14,7 +14,7 @@ import time
 
 def dummy_eval(chromosome):
     """
-    dummy evaluation technique, order the augmentations seuentially
+    dummy evaluation technique, order the augmentations sequentially
     :param chromosome:
     :return:
     """
