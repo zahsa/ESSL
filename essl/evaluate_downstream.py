@@ -4,6 +4,8 @@ from tqdm import tqdm
 from tensorboardX import SummaryWriter
 from datetime import datetime
 import os
+import copy
+
 
 from essl import optimizers
 from essl import losses
@@ -95,7 +97,10 @@ class finetune:
         train_accs = []
         val_losses = []
         val_accs = []
-        test_accs = []
+        # test_accs = []
+        # store best validation for model #
+        max_val_acc = -1
+        test_model = copy.deepcopy(model)
         if self.verbose:
             epochs = tqdm(range(self.num_epochs))
         else:
@@ -144,13 +149,12 @@ class finetune:
                         _, predicted = outputs.max(1)
                         total += labels.size(0)
                         correct += predicted.eq(labels).sum().item()
-                # compute acc
-                # val_y_true = val_y_true.cpu().numpy()
-                # _, val_y_pred = torch.max(val_pred_probs, 1)
-                # val_y_pred = val_y_pred.cpu().numpy()
-                # record acc
-                # val_acc = accuracy_score(val_y_true, val_y_pred)
+
+                # record best acc for testing #
                 val_acc = 100.*correct/total
+                if val_acc > max_val_acc:
+                    max_val_acc = val_acc
+                    test_model = copy.deepcopy(model)
                 val_accs.append(val_acc)
                 # record loss
                 val_loss = running_loss / len(valloader)
@@ -165,39 +169,35 @@ class finetune:
             if scheduler:
                 scheduler.step()
 
-            # evaluate #
-            # add num workers
-            testloader = torch.utils.data.DataLoader(self.dataset.test_data,
-                                                     batch_size=self.batch_size,
-                                                     shuffle=False,
-                                                     num_workers=12)
-            model.eval()
-            total = 0
-            correct = 0
-            running_loss = 0.0
-            # deactivate autograd engine
-            with torch.no_grad():
-                for X, y in testloader:
-                    inputs = X.to(device)
-                    labels = y.to(device)
-                    outputs = model(inputs)
-                    loss = criterion(outputs, labels)
-                    running_loss += loss.item()
-                    # y_true = torch.cat((y_true, labels), 0)
-                    # pred_probs = torch.cat((pred_probs, outputs), 0)
-                    _, predicted = outputs.max(1)
-                    total += labels.size(0)
-                    correct += predicted.eq(labels).sum().item()
-                test_loss = running_loss / len(testloader)
+        # evaluate #
+        # add num workers
+        testloader = torch.utils.data.DataLoader(self.dataset.test_data,
+                                                 batch_size=self.batch_size,
+                                                 shuffle=False,
+                                                 num_workers=12)
+        test_model.eval()
+        total = 0
+        correct = 0
+        running_loss = 0.0
+        # deactivate autograd engine
+        with torch.no_grad():
+            for X, y in testloader:
+                inputs = X.to(device)
+                labels = y.to(device)
+                outputs = test_model(inputs)
+                loss = criterion(outputs, labels)
+                running_loss += loss.item()
+                # y_true = torch.cat((y_true, labels), 0)
+                # pred_probs = torch.cat((pred_probs, outputs), 0)
+                _, predicted = outputs.max(1)
+                total += labels.size(0)
+                correct += predicted.eq(labels).sum().item()
+            test_loss = running_loss / len(testloader)
 
+        test_acc = 100.*correct/total
+        # test_accs.append(test_acc)
 
-            # y_true = y_true.cpu().numpy()
-            # _, y_pred = torch.max(pred_probs, 1)
-            # y_pred = y_pred.cpu().numpy()
-            test_acc = 100.*correct/total
-            test_accs.append(test_acc)
-
-        test_acc = max(test_accs)
+        # test_acc = max(test_accs)
         if report_all_metrics:
             return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
 
