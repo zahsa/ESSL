@@ -45,7 +45,6 @@ class SimCLR(nn.Module):
         criterion = NTXentLoss().to(device)
         optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
         losses = []
-        print("Starting Training")
         for epoch in range(num_epochs):
             total_loss = 0
             for (x0, x1), _, _ in dataloader:

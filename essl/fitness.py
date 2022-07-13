@@ -139,7 +139,10 @@ class fitness_function:
             return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
         else:
             # store the losses with id of chromosome
-            self.downstream_losses[chromosome.id] = train_losses
+            try:
+                self.downstream_losses[chromosome.id] = train_losses
+            except:
+                pass
             return test_acc,
 
 
