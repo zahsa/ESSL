@@ -46,6 +46,7 @@ from essl.utils import id_generator
 @click.option("--adaptive_pb", default=None, type=str, help="halving, generational")
 @click.option("--patience", default=-1, type=int, help="number of non-improving generations before early stopping")
 @click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
+@click.option("--use_test_acc", default=True, type=bool, help="whether or not to use test accuracy for fitness")
 
 def main_cli(pop_size, num_generations,
                              cxpb,
@@ -66,7 +67,8 @@ def main_cli(pop_size, num_generations,
                              num_elite,
                              adaptive_pb,
                              patience,
-                             discrete_intensity
+                             discrete_intensity,
+                             use_test_acc
                              ):
     main(pop_size=pop_size,
          num_generations=num_generations,
@@ -88,7 +90,8 @@ def main_cli(pop_size, num_generations,
          num_elite=num_elite,
          adaptive_pb=adaptive_pb,
          patience=patience,
-         discrete_intensity=discrete_intensity
+         discrete_intensity=discrete_intensity,
+         use_test_acc=use_test_acc
          )
 
 
@@ -113,7 +116,8 @@ def main(pop_size, num_generations,
                              num_elite=0,
                              adaptive_pb=None,
                              patience = -1,
-                             discrete_intensity=False
+                             discrete_intensity=False,
+                             use_test_acc=True
                             ):
 
     # set seeds #
@@ -146,7 +150,8 @@ def main(pop_size, num_generations,
                                      evaluate_downstream_method=evaluate_downstream_method,
                                      evaluate_downstream_kwargs=evaluate_downstream_kwargs,
                                      device=device,
-                                     seed=seed)
+                                     seed=seed,
+                                     use_test_acc=use_test_acc)
     toolbox.register("evaluate", eval)
     if crossover == "PMX":
         toolbox.register("mate", PMX)
@@ -364,3 +369,4 @@ if __name__ == "__main__":
          adaptive_pb="AGA"
          )
     print(f"TOOK {time.time()-t1} to run")
+

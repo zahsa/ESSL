@@ -68,7 +68,8 @@ class finetune:
     def __call__(self, backbone: torch.nn.Module,
                  device=None,
                  report_all_metrics: bool=False,
-                 no_test_acc: bool=True):
+                 use_test_acc: bool=True):
+        
         if not device:
             device = self.device
         model = finetune_model(backbone.backbone, backbone.in_features, self.dataset.num_classes).to(device)
@@ -168,7 +169,7 @@ class finetune:
                     self.writer.add_scalar('val/acc', val_acc, epoch)
             if scheduler:
                 scheduler.step()
-        if not no_test_acc:
+        if use_test_acc:
             # evaluate #
             # add num workers
             testloader = torch.utils.data.DataLoader(self.dataset.test_data,

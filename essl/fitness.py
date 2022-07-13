@@ -75,7 +75,8 @@ class fitness_function:
                  evaluate_downstream_method: str,
                  evaluate_downstream_kwargs: dict = {},
                  device: str = "cuda",
-                 seed: int=10):
+                 seed: int=10,
+                 use_test_acc: bool = True):
 
         # set seeds #
         self.seed = seed
@@ -93,6 +94,7 @@ class fitness_function:
         self.ssl_task = ssl_task
         self.downstream_losses = {}
         self.device = device
+        self.use_test_acc = use_test_acc
         self.ssl_task = pretext_task(method=self.ssl_task,
                                 dataset=self.dataset,
                                 backbone=self.backbone,
@@ -118,11 +120,10 @@ class fitness_function:
 
     def clear_downstream_losses(self):
         self.downstream_losses = {}
-    # D1: no_test_acc - controls wheter to perform testing or just validation
+    # D1: use_test_acc - controls wheter to perform testing or just validation
     def __call__(self, chromosome,
                  device=None,
-                 return_losses=False,
-                 no_test_acc=True):
+                 return_losses=False):
         if not device:
             device = self.device
         t1 = time.time()
@@ -135,7 +136,7 @@ class fitness_function:
         train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
                                                                                                        # device=device,
                                                                                                        report_all_metrics=True,
-                                                                                                       no_test_acc=no_test_acc)
+                                                                                                       use_test_acc=self.use_test_acc)
         print("time to eval: ", time.time() - t1)
         if return_losses:
             return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
@@ -145,11 +146,12 @@ class fitness_function:
                 self.downstream_losses[chromosome.id] = train_losses
             except:
                 pass
-            if no_test_acc:
+            if self.use_test_acc:
                 # return max of val_accs
-                return max(val_accs),
-            else:
                 return test_acc,
+
+            else:
+                return max(val_accs),
 
 
 if __name__ == "__main__":
