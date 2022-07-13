@@ -118,10 +118,11 @@ class fitness_function:
 
     def clear_downstream_losses(self):
         self.downstream_losses = {}
-    # D4: include device for parralelization compatibility (add)
+    # D1: no_test_acc - controls wheter to perform testing or just validation
     def __call__(self, chromosome,
                  device=None,
-                 return_losses=False):
+                 return_losses=False,
+                 no_test_acc=True):
         if not device:
             device = self.device
         t1 = time.time()
@@ -133,7 +134,8 @@ class fitness_function:
                                                    )
         train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
                                                                                                        # device=device,
-                                                                                                       report_all_metrics=True)
+                                                                                                       report_all_metrics=True,
+                                                                                                       no_test_acc=no_test_acc)
         print("time to eval: ", time.time() - t1)
         if return_losses:
             return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
@@ -143,7 +145,11 @@ class fitness_function:
                 self.downstream_losses[chromosome.id] = train_losses
             except:
                 pass
-            return test_acc,
+            if no_test_acc:
+                # return max of val_accs
+                return max(val_accs),
+            else:
+                return test_acc,
 
 
 if __name__ == "__main__":
