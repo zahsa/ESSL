@@ -182,10 +182,6 @@ def main(pop_size, num_generations,
 
     # D10: early stopping (added, by default will never stop (default val = -1))
     max_ind = pop[0]
-    for ind in pop:
-        if ind.fitness.values[0] > max_ind.fitness.values[0]:
-            max_ind = ind
-
     min_ind = pop[0]
     for ind in pop:
         if ind.fitness.values[0] < min_ind.fitness.values[0]:
