@@ -12,7 +12,7 @@ DEFAULT_OPS = {
     "Rotate":[-30, 30],
     "Color":[0.1, 1.9],
     # "Posterize":[4, 8],
-    "Solarize":[0, 1],
+    "Solarize":[0.0, 1.0],
     "Contrast":[0.1,1.9],
     "Sharpness":[0.1, 1.9],
     "Brightness":[0.1, 1.9]

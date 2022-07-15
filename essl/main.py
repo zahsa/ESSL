@@ -17,7 +17,6 @@ from essl.chromosome import chromosome_generator
 from essl import fitness
 from essl import mutate
 from essl.crossover import PMX
-# D1: add one point feasibility check
 from essl.crossover import onepoint_feas
 from essl.utils import id_generator
 
@@ -40,8 +39,6 @@ from essl.utils import id_generator
 @click.option("--use_tensorboard", default=True, type=bool, help="whether to use tensorboard or not")
 @click.option("--save_plots", default=True, type=bool, help="whether to save plots or not")
 @click.option("--chromosome_length", default=5, type=int, help="number of genes in chromosome")
-# D2,3,4,5
-# elitism, adaptive probs, patience, discrete intensities
 @click.option("--num_elite", default=0, type=int, help="number of elite chromosomes")
 @click.option("--adaptive_pb", default=None, type=str, help="halving, generational")
 @click.option("--patience", default=-1, type=int, help="number of non-improving generations before early stopping")
@@ -135,7 +132,6 @@ def main(pop_size, num_generations,
     toolbox = base.Toolbox()
     creator.create("Fitness", base.Fitness, weights=(100.0,)) # maximize accuracy
     creator.create("Individual", list, fitness=creator.Fitness, id=None)
-    # D7: add discrete option to chromo generator (add)
     toolbox.register("gen_aug", chromosome_generator(length=chromosome_length,
                                                      discrete=discrete_intensity,
                                                      seed=seed))
@@ -157,7 +153,6 @@ def main(pop_size, num_generations,
         toolbox.register("mate", PMX)
     elif crossover == "twopoint":
         toolbox.register("mate", tools.cxTwoPoint)
-    # D8: onepoint crossover (added deaps version)
     elif crossover == "onepoint":
         toolbox.register("mate", tools.cxOnePoint)
     elif crossover == 'onepoint_feas':
@@ -182,10 +177,9 @@ def main(pop_size, num_generations,
     fitnesses = list(map(toolbox.evaluate, pop))
     for ind, fit in zip(pop, fitnesses):
        ind.fitness.values = fit
-    # D9: record chromosomes information
     outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std", "chromos"]}
 
-    # D10: early stopping (added, by default will never stop (default val = -1))
+    # Early stopping
     max_ind = pop[0]
     min_ind = pop[0]
     for ind in pop:
@@ -197,13 +191,11 @@ def main(pop_size, num_generations,
     no_improvement_count = 0
 
     mean = sum([f[0] for f in fitnesses]) / len(fitnesses)
-    min_f = min_ind.fitness.values[0]
     max_f = max_ind.fitness.values[0]
 
     # evolution loop
     for g in range(num_generations):
         print("-- Generation %i --" % g)
-
         # sort offspring in descending order
         elite_indexes = sorted(range(len(pop)), key=lambda i: pop[i].fitness.values[0], reverse=True)[:num_elite]
         elite = [pop[i] for i in elite_indexes]
@@ -214,7 +206,6 @@ def main(pop_size, num_generations,
         # Clone the selected individuals and elite individuals
         offspring = list(map(toolbox.clone, offspring)) + list(map(toolbox.clone, elite))
         random.shuffle(offspring)
-        # D2: change adaptive probs to halve every 3 gens
         if adaptive_pb:
             if adaptive_pb == "halving":
                 # drop_rate = 0.5, gen_drop = 3
@@ -289,7 +280,6 @@ def main(pop_size, num_generations,
         std = abs(sum2 / length - mean ** 2) ** 0.5
         min_f = min_ind.fitness.values[0]
         max_f = max_ind.fitness.values[0]
-        # D14: history for early stopping (add)
         history.append(max_f)
         print("  Min %s" % min_f)
         print("  Max %s" % max_f)
