@@ -159,7 +159,7 @@ def main(pop_size, num_generations,
         toolbox.register("mate", onepoint_feas)
     else:
         raise ValueError(f"invalid crossover ({crossover})")
-    toolbox.register("mutate", mutate.mutGaussian, indpb=0.05)
+    toolbox.register("mutate", mutate.mutGaussianChoice)
     if selection == "tournament":
         toolbox.register("select", tools.selTournament, tournsize=3)
     elif selection == "SUS":
