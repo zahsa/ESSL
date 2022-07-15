@@ -67,10 +67,11 @@ class finetune:
     # D1: allow for passing of device, for parralleisim compatibility (add)
     def __call__(self, backbone: torch.nn.Module,
                  device=None,
-                 report_all_metrics: bool=False):
+                 report_all_metrics: bool=False,
+                 use_test_acc: bool=True):
+        
         if not device:
             device = self.device
-
         model = finetune_model(backbone.backbone, backbone.in_features, self.dataset.num_classes).to(device)
         # D2: set num_workers to 12 - provides considerable improvement in speed (add)
         trainloader = torch.utils.data.DataLoader(self.dataset.train_data,
@@ -168,39 +169,45 @@ class finetune:
                     self.writer.add_scalar('val/acc', val_acc, epoch)
             if scheduler:
                 scheduler.step()
+        if use_test_acc:
+            # evaluate #
+            # add num workers
+            testloader = torch.utils.data.DataLoader(self.dataset.test_data,
+                                                     batch_size=self.batch_size,
+                                                     shuffle=False,
+                                                     num_workers=12)
+            test_model.eval()
+            total = 0
+            correct = 0
+            running_loss = 0.0
+            # deactivate autograd engine
+            with torch.no_grad():
+                for X, y in testloader:
+                    inputs = X.to(device)
+                    labels = y.to(device)
+                    outputs = test_model(inputs)
+                    loss = criterion(outputs, labels)
+                    running_loss += loss.item()
+                    # y_true = torch.cat((y_true, labels), 0)
+                    # pred_probs = torch.cat((pred_probs, outputs), 0)
+                    _, predicted = outputs.max(1)
+                    total += labels.size(0)
+                    correct += predicted.eq(labels).sum().item()
+                test_loss = running_loss / len(testloader)
 
-        # evaluate #
-        # add num workers
-        testloader = torch.utils.data.DataLoader(self.dataset.test_data,
-                                                 batch_size=self.batch_size,
-                                                 shuffle=False,
-                                                 num_workers=12)
-        test_model.eval()
-        total = 0
-        correct = 0
-        running_loss = 0.0
-        # deactivate autograd engine
-        with torch.no_grad():
-            for X, y in testloader:
-                inputs = X.to(device)
-                labels = y.to(device)
-                outputs = test_model(inputs)
-                loss = criterion(outputs, labels)
-                running_loss += loss.item()
-                # y_true = torch.cat((y_true, labels), 0)
-                # pred_probs = torch.cat((pred_probs, outputs), 0)
-                _, predicted = outputs.max(1)
-                total += labels.size(0)
-                correct += predicted.eq(labels).sum().item()
-            test_loss = running_loss / len(testloader)
+            test_acc = 100.*correct/total
+            # test_accs.append(test_acc)
 
-        test_acc = 100.*correct/total
-        # test_accs.append(test_acc)
+            # test_acc = max(test_accs)
+            if report_all_metrics:
+                return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
 
-        # test_acc = max(test_accs)
-        if report_all_metrics:
-            return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
+            return train_losses, test_acc
+        else:
+            # test_acc = max(test_accs)
+            if report_all_metrics:
+                return train_losses, train_accs, val_losses, val_accs, None, None
 
-        return train_losses, test_acc
+            return train_losses, max(val_accs)
 
 
