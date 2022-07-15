@@ -3,7 +3,6 @@ import random
 from itertools import permutations
 import numpy as np
 
-# D1: discretized version of chromosomes (add)
 class chromosome_generator:
     def __init__(self, augmentations=ops.DEFAULT_OPS,
                  length=5, seed=10, discrete=False, intensity_increments=10):
@@ -14,7 +13,7 @@ class chromosome_generator:
         self.augmentations = augmentations
         self.discrete = discrete
         self.intensity_increments = intensity_increments
-        random.seed(seed)
+        # random.seed(seed)
         # encode augmentations as integer
         self.pheno2geno = {
             a: i for i, a in enumerate(self.augmentations)
