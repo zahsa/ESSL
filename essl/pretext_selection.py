@@ -42,6 +42,7 @@ class SimCLR(nn.Module):
             drop_last=True,
             num_workers=12,
         )
+
         criterion = NTXentLoss().to(device)
         optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
         losses = []

@@ -191,8 +191,9 @@ def main(pop_size, num_generations,
     no_improvement_count = 0
 
     mean = sum([f[0] for f in fitnesses]) / len(fitnesses)
+    global_max_mean = mean
     max_f = max_ind.fitness.values[0]
-
+    global_max = max_f
     # evolution loop
     for g in range(num_generations):
         print("-- Generation %i --" % g)
@@ -214,7 +215,7 @@ def main(pop_size, num_generations,
             elif adaptive_pb == "generational":
                 cxpb = 1 - ((g + 1) / num_generations)
                 mutpb = ((g + 1) / num_generations)
-            elif adaptive_pb == "AGA":
+            elif adaptive_pb in ["AGA", "GAGA"]:
                 pass
             else:
                 raise ValueError(f"invalid adaptive_pb value: {adaptive_pb}")
@@ -228,7 +229,12 @@ def main(pop_size, num_generations,
                     cxpb = (max_f - f_p) / (max_f - mean)
                 else:
                     cxpb = 1
-
+            if adaptive_pb == "GAGA":
+                f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
+                if f_p >= global_max_mean:
+                    cxpb = (global_max - f_p) / (global_max - global_max_mean)
+                else:
+                    cxpb = 1
             if random.random() < cxpb:
 
                 toolbox.mate(child1, child2)
@@ -276,10 +282,12 @@ def main(pop_size, num_generations,
 
         length = len(pop)
         mean = sum(fits) / length
+        global_max_mean = max(global_max_mean, mean)
         sum2 = sum(x * x for x in fits)
         std = abs(sum2 / length - mean ** 2) ** 0.5
         min_f = min_ind.fitness.values[0]
         max_f = max_ind.fitness.values[0]
+        global_max = max(global_max, max_f)
         history.append(max_f)
         print("  Min %s" % min_f)
         print("  Max %s" % max_f)
@@ -349,10 +357,10 @@ if __name__ == "__main__":
          ssl_epochs=1,
          num_generations=1,
          backbone="largerCNN_backbone",
-         exp_dir="/home/noah/ESSL/exps/testing/adaptive",
+         exp_dir="/home/noah/ESSL/exps/testing/GAGA",
          evaluate_downstream_kwargs={"num_epochs":1},
-         crossover="onepoint",
-         adaptive_pb="AGA"
+         crossover="onepoint_feas",
+         adaptive_pb="GAGA"
          )
     print(f"TOOK {time.time()-t1} to run")
 

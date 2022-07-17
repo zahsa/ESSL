@@ -39,7 +39,6 @@ class pretext_task:
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.device = device
-    # D1: functionality of use of device, for parralelization compatibility (added)
     def __call__(self,
                  transform,
                  device=None
@@ -52,7 +51,6 @@ class pretext_task:
                   self.batch_size,
                   self.num_epochs,
                   #self.device
-                  # D2: self.device instead of device (for parralelization compatibility) add
                   device
                          )
         return model, loss
@@ -77,7 +75,6 @@ class fitness_function:
                  device: str = "cuda",
                  seed: int=10,
                  use_test_acc: bool = True):
-
         # set seeds #
         self.seed = seed
         torch.cuda.manual_seed_all(self.seed)
@@ -107,7 +104,6 @@ class fitness_function:
                                                                                                  seed=self.seed,
                                                                                                  device=self.device,
                                                                                                  **self.evaluate_downstream_kwargs)
-
 
     @staticmethod
     def gen_augmentation_torch(chromosome: list) -> torchvision.transforms.Compose:
