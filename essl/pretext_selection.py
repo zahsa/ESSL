@@ -15,7 +15,6 @@ from lightly.models.modules import NNCLRProjectionHead
 from lightly.models.modules import NNCLRPredictionHead
 from lightly.models.modules import NNMemoryBankModule
 
-# D1: change num workers from 8 to 12 (add)
 class SimCLR(nn.Module):
     def __init__(self, backbone, seed=10):
         super().__init__()
@@ -42,6 +41,7 @@ class SimCLR(nn.Module):
             drop_last=True,
             num_workers=12,
         )
+
         criterion = NTXentLoss().to(device)
         optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
         losses = []
