@@ -116,10 +116,10 @@ class fitness_function:
 
     def clear_downstream_losses(self):
         self.downstream_losses = {}
-    # D1: use_test_acc - controls wheter to perform testing or just validation
     def __call__(self, chromosome,
                  device=None,
-                 return_losses=False):
+                 return_losses=False,
+                 verbose=True):
         if not device:
             device = self.device
         t1 = time.time()
@@ -128,21 +128,23 @@ class fitness_function:
         representation, ssl_losses = self.ssl_task(transform,
                                                    device=device
                                                    )
+        # return all metrics by default
         train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
                                                                                                        # device=device,
                                                                                                        report_all_metrics=True,
                                                                                                        use_test_acc=self.use_test_acc)
-        print("time to eval: ", time.time() - t1)
+        if verbose:
+            print("time to eval: ", time.time() - t1)
         if return_losses:
             return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
         else:
-            # store the losses with id of chromosome
+            # store the losses with id of chromosome, try statement to allow for use outside of GA
             try:
                 self.downstream_losses[chromosome.id] = train_losses
             except:
                 pass
+            # default no return losses,
             if self.use_test_acc:
-                # return max of val_accs
                 return test_acc,
 
             else:
@@ -152,17 +154,16 @@ class fitness_function:
 if __name__ == "__main__":
     c = chromosome.chromosome_generator()
     cc = c()
-    print("seed: ", torch.seed())
     fitness = fitness_function(dataset="Cifar10",
                                  backbone="largerCNN_backbone",
-                                 ssl_task="SwaV",
+                                 ssl_task="SimCLR",
                                  ssl_epochs=1,
                                  ssl_batch_size=64,
                                  evaluate_downstream_method="finetune",
-                                 device="cuda")
-    print("seed: ", torch.cuda.seed())
-    print(fitness(cc, return_losses=True))
-    print("seed: ", torch.cuda.seed())
+                                 evaluate_downstream_kwargs={"num_epochs":4},
+                                 device="cuda",
+                                 use_test_acc=False)
+    fit = fitness(cc, return_losses=True)
     import pdb;
     pdb.set_trace()
 

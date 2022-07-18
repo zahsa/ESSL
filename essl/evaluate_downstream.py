@@ -64,7 +64,6 @@ class finetune:
         else:
             self.writer = None
         self.use_scheduler = use_scheduler
-    # D1: allow for passing of device, for parralleisim compatibility (add)
     def __call__(self, backbone: torch.nn.Module,
                  device=None,
                  report_all_metrics: bool=False,
@@ -73,7 +72,6 @@ class finetune:
         if not device:
             device = self.device
         model = finetune_model(backbone.backbone, backbone.in_features, self.dataset.num_classes).to(device)
-        # D2: set num_workers to 12 - provides considerable improvement in speed (add)
         trainloader = torch.utils.data.DataLoader(self.dataset.train_data,
                                                   batch_size=self.batch_size,
                                                   shuffle=True,
@@ -98,7 +96,6 @@ class finetune:
         train_accs = []
         val_losses = []
         val_accs = []
-        # test_accs = []
         # store best validation for model #
         max_val_acc = -1
         test_model = copy.deepcopy(model)
@@ -118,7 +115,6 @@ class finetune:
                 running_loss+=loss.item()
                 loss.backward()
                 optimizer.step()
-
                 # record predictions
                 _, predicted = outputs.max(1)
                 total += labels.size(0)
@@ -134,8 +130,6 @@ class finetune:
 
             if valloader:
                 with torch.no_grad():
-                    # val_y_true = torch.tensor([], dtype=torch.long).to(device)
-                    # val_pred_probs = torch.tensor([]).to(device)
                     running_loss = 0.0
                     total = 0
                     correct = 0
@@ -145,8 +139,6 @@ class finetune:
                         loss = criterion(outputs, labels)
                         running_loss += loss.item()
                         # record predictions
-                        # val_y_true = torch.cat((val_y_true, labels), 0)
-                        # val_pred_probs = torch.cat((val_pred_probs, outputs), 0)
                         _, predicted = outputs.max(1)
                         total += labels.size(0)
                         correct += predicted.eq(labels).sum().item()
@@ -199,6 +191,7 @@ class finetune:
 
             return train_losses, test_acc
         else:
+            import pdb;pdb.set_trace()
             if report_all_metrics:
                 return train_losses, train_accs, val_losses, val_accs, None, None
 

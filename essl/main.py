@@ -360,7 +360,8 @@ if __name__ == "__main__":
          exp_dir="/home/noah/ESSL/exps/testing/GAGA",
          evaluate_downstream_kwargs={"num_epochs":1},
          crossover="onepoint_feas",
-         adaptive_pb="GAGA"
+         adaptive_pb="GAGA",
+         use_test_acc=True
          )
     print(f"TOOK {time.time()-t1} to run")
 
