@@ -229,7 +229,7 @@ def main(pop_size, num_generations,
                     cxpb = (max_f - f_p) / (max_f - mean)
                 else:
                     cxpb = 1
-            if adaptive_pb == "GAGA":
+            elif adaptive_pb == "GAGA":
                 f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
                 if f_p >= global_max_mean:
                     cxpb = (global_max - f_p) / (global_max - global_max_mean)
@@ -255,6 +255,15 @@ def main(pop_size, num_generations,
                 # modify mutpb
                 if mutant.fitness.values[0] >= mean:
                     mutpb = (0.5 * (max_f - mutant.fitness.values[0])) / (max_f - mean)
+                else:
+                    mutpb = 0.5
+            elif adaptive_pb == "GAGA":
+                # if child was just created this round, mutate
+                if mutant.id in children:
+                    continue
+                # modify mutpb
+                if mutant.fitness.values[0] >= global_max_mean:
+                    mutpb = (0.5 * (global_max - mutant.fitness.values[0])) / (global_max - global_max_mean)
                 else:
                     mutpb = 0.5
             if random.random() < mutpb:
