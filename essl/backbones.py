@@ -2,12 +2,7 @@ from torch import nn
 import torchvision
 import torch
 
-class base_backbone(nn.Module):
-    def __init__(self, seed=10):
-        # set seeds #
-        torch.cuda.manual_seed_all(seed)
-        torch.cuda.manual_seed(seed)
-        torch.manual_seed(seed)
+
 
 class ResNet18_backbone(nn.Module):
     def __init__(self, pretrained=True, seed = 10):

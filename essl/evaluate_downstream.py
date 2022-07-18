@@ -188,23 +188,17 @@ class finetune:
                     outputs = test_model(inputs)
                     loss = criterion(outputs, labels)
                     running_loss += loss.item()
-                    # y_true = torch.cat((y_true, labels), 0)
-                    # pred_probs = torch.cat((pred_probs, outputs), 0)
                     _, predicted = outputs.max(1)
                     total += labels.size(0)
                     correct += predicted.eq(labels).sum().item()
                 test_loss = running_loss / len(testloader)
-
             test_acc = 100.*correct/total
-            # test_accs.append(test_acc)
 
-            # test_acc = max(test_accs)
             if report_all_metrics:
                 return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
 
             return train_losses, test_acc
         else:
-            # test_acc = max(test_accs)
             if report_all_metrics:
                 return train_losses, train_accs, val_losses, val_accs, None, None
 

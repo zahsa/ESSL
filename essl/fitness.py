@@ -125,7 +125,6 @@ class fitness_function:
         t1 = time.time()
         transform = self.gen_augmentation_torch(chromosome)
 
-        # D5: include device for parrallization compatibility (add)
         representation, ssl_losses = self.ssl_task(transform,
                                                    device=device
                                                    )

@@ -15,7 +15,6 @@ from lightly.models.modules import NNCLRProjectionHead
 from lightly.models.modules import NNCLRPredictionHead
 from lightly.models.modules import NNMemoryBankModule
 
-# D1: change num workers from 8 to 12 (add)
 class SimCLR(nn.Module):
     def __init__(self, backbone, seed=10):
         super().__init__()
