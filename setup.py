@@ -26,6 +26,6 @@ setup(
                       'torchvision', 'tqdm', 'typing_extensions',
                       'urllib3', 'Werkzeug', 'yarl', 'zipp'],
     entry_points={
-        "console_scripts": ["essl_train = essl.main:main_cli"]
+        "console_scripts": ["essl_GA = essl.main:GA_cli", "essl_GA_mo = essl.main:GA_mo_cli"]
     },
 )

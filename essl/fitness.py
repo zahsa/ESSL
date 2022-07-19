@@ -150,6 +150,87 @@ class fitness_function:
             else:
                 return max(val_accs),
 
+class fitness_function_mo:
+    """
+    proposed approach:
+    wrap above workflow in a class to store global aspects of the evaluation such as
+    dataset and hparams
+    """
+
+    # D1: remove ssl task as option from fitness function
+    def __init__(self,
+                 dataset: str,
+                 backbone: str,
+                 ssl_epochs: int,
+                 ssl_batch_size: int,
+                 evaluate_downstream_method: str,
+                 evaluate_downstream_kwargs: dict = { },
+                 device: str = "cuda",
+                 seed: int = 10):
+
+        # set seeds #
+        self.seed = seed
+        torch.cuda.manual_seed_all(self.seed)
+        torch.cuda.manual_seed(self.seed)
+        torch.manual_seed(self.seed)
+
+        self.dataset = datasets.__dict__[dataset](seed=seed)
+        self.backbone = backbone
+        self.ssl_epochs = ssl_epochs
+        self.ssl_batch_size = ssl_batch_size
+        self.evaluate_downstream_method = evaluate_downstream_method
+        self.evaluate_downstream_kwargs = evaluate_downstream_kwargs
+        # self.ssl_task = ssl_task
+        self.downstream_losses = { }
+        self.device = device
+        self.evaluate_downstream = evaluate_downstream.__dict__[self.evaluate_downstream_method](
+            dataset=self.dataset,
+            seed=self.seed,
+            device=self.device,
+            **self.evaluate_downstream_kwargs)
+
+    @staticmethod
+    def gen_augmentation_torch(chromosome: list) -> torchvision.transforms.Compose:
+        # gen augmentation
+        transform = torchvision.transforms.Compose([
+                                                       torchvision.transforms.Lambda(ops.__dict__[op](intensity=i))
+                                                       for op, i in chromosome
+                                                   ] + [torchvision.transforms.ToTensor()])
+        return transform
+
+    def clear_downstream_losses(self):
+        self.downstream_losses = { }
+
+    def __call__(self, chromosome,
+                 device=None,
+                 return_losses=False):
+        if not device:
+            device = self.device
+        # D2: make pretext task within eval call
+        ssl_task = pretext_task(method=chromosome[0],
+                                dataset=self.dataset,
+                                backbone=self.backbone,
+                                num_epochs=self.ssl_epochs,
+                                batch_size=self.ssl_batch_size,
+                                device=self.device,
+                                seed=self.seed
+                                )
+        t1 = time.time()
+        transform = self.gen_augmentation_torch(chromosome[1:])
+        representation, ssl_losses = ssl_task(transform,
+                                              device=device
+                                              )
+        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(
+            representation,
+            report_all_metrics=True)
+
+        print("time to eval: ", time.time() - t1)
+        if return_losses:
+            return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
+        else:
+            # store the losses with id of chromosome
+            self.downstream_losses[chromosome.id] = train_losses
+            return test_acc,
 
 if __name__ == "__main__":
     c = chromosome.chromosome_generator()

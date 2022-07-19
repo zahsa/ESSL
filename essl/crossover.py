@@ -30,7 +30,7 @@ def PMX_inner(s, t, size, values1, values2):
         while offspring[1][i][0] in _map2:
             offspring[1][i] = values2[_map2[offspring[1][i][0]]]
     return offspring
-# D1: set num attempts to 5
+
 def PMX(s,t, num_attempts=5):
     """
     create mapping based on augmentation operator itself,
@@ -58,35 +58,46 @@ def PMX(s,t, num_attempts=5):
             offspring = parents
             break
     s[:], t[:] = offspring
-    return offspring
+    return s, t
 
-# D1: change name to onepoint_feas
-def onepoint_feas(ind1, ind2, n_tries=5):
-    size = min(len(ind1), len(ind2))
-    child1, child2 = ind1.copy(), ind2.copy()
+def PMX_mo(s,t, num_attempts=5):
+    s[1:], t[1:] = PMX(s[1:],t[1:], num_attempts)
+    return s, t
+
+def onepoint_feas(s, t, num_attempts=20):
+    size = min(len(s), len(t))
+    child1, child2 = s.copy(), t.copy()
     cxpoint = random.randint(1, size - 1)
     child1[cxpoint:], child2[cxpoint:] = child2[cxpoint:], child1[cxpoint:]
     total = 0
-    # if there are duplicate operators in ind1 or ind 2
+    # if there are duplicate operators in s or ind 2
     while len(set([g[0] for g in child1])) < len(child1) or \
           len(set([g[0] for g in child2])) < len(child2):
+        child1, child2 = s.copy(), t.copy()
         cxpoint = random.randint(1, size - 1)
         child1[cxpoint:], child2[cxpoint:] = child2[cxpoint:], child1[cxpoint:]
         total+=1
-        if total == n_tries:
-            child1 = ind1
-            child2 = ind2
+        if total == num_attempts:
+            child1 = s
+            child2 = t
             break
-    ind1[:], ind2[:] = child1[:], child2[:]
-    return child1, child2
+    s[:], t[:] = child1[:], child2[:]
+    return s, t
+
+def onepoint_feas_mo(s,t, num_attempts=5):
+    s[1:], t[1:] = onepoint_feas(s[1:],t[1:], num_attempts)
+    return s, t
 
 if __name__ == "__main__":
-    from essl.chromosome import chromosome_generator
-    c = chromosome_generator()
+    from essl.chromosome import chromosome_generator_mo
+    from copy import deepcopy
+    c = chromosome_generator_mo(seed=13)
     chromo1 = c()
     chromo2 = c()
-
-    i, k = PMX(chromo1, chromo2)
-    print(i)
-    print(k)
-    import pdb;pdb.set_trace()
+    cc1 = deepcopy(chromo1)
+    cc2 = deepcopy(chromo2)
+    # for _ in range(10):
+    print(chromo1)
+    c1, c2 = onepoint_feas_mo(chromo1, chromo2)
+    print(chromo1)
+    # print(c1, c2)
