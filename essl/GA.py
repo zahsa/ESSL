@@ -10,6 +10,7 @@ from datetime import datetime
 import pandas as pd
 sns.set_theme()
 import json
+import numpy as np
 
 
 from essl.chromosome import chromosome_generator, chromosome_generator_mo, SSL_TASKS
@@ -283,6 +284,28 @@ def GA(pop_size, num_generations,
                 sns.lineplot(list(range(len(values))), values)
                 plt.savefig(os.path.join(plot_dir, f"{m}.png"))
                 plt.clf()
+
+            # min max line plot
+            plt.plot(range(1, len(outcomes['avg']) + 1), outcomes['avg'], 'b-', label=ssl_task)
+            plt.plot(range(1, len(outcomes['max']) + 1), outcomes['max'], 'b-')
+            plt.plot(range(1, len(outcomes['max']) + 1), outcomes['min'], 'b-')
+            plt.fill_between(range(1, len(outcomes['avg']) + 1), outcomes['min'], outcomes['max'], color='b',
+                             alpha=0.2)
+            plt.xlabel("Generation")
+            plt.ylabel("Fitness")
+            plt.xticks = (range(len(outcomes['avg'])))
+            plt.legend(loc='upper left')
+            plt.savefig(os.path.join(plot_dir, f"min_max.png"))
+            plt.clf()
+
+            # scattered boxplot
+            data = pd.DataFrame(outcomes["pop_vals"], columns=["Generation", "Fitness"])
+            sns.boxplot(data=data, x="Generation", y="Fitness", color='white')
+            for i, row in data.iterrows():
+                plt.scatter(np.random.normal(row["Generation"], 0.04), row["Fitness"], alpha=0.7, color='skyblue')
+            plt.savefig(os.path.join(plot_dir, f"scatter_boxplot.png"))
+            plt.clf()
+
     with open(os.path.join(exp_dir, "outcomes.json"), "w") as f:
         json.dump(outcomes, f)
 
@@ -308,7 +331,8 @@ def GA_mo(pop_size, num_generations,
                              num_elite=0,
                              adaptive_pb=None,
                              patience = -1,
-                             discrete_intensity=False
+                             discrete_intensity=False,
+                             use_test_acc=True
                             ):
 
     # set seeds #
@@ -339,7 +363,8 @@ def GA_mo(pop_size, num_generations,
                                      evaluate_downstream_method=evaluate_downstream_method,
                                      evaluate_downstream_kwargs=evaluate_downstream_kwargs,
                                      device=device,
-                                     seed=seed)
+                                     seed=seed,
+                                       use_test_acc=use_test_acc)
     toolbox.register("evaluate", eval)
     if crossover == "PMX":
         toolbox.register("mate", PMX_mo)
@@ -407,7 +432,7 @@ def GA_mo(pop_size, num_generations,
             elif adaptive_pb == "generational":
                 cxpb1 = 1 - ((g + 1) / num_generations)
                 mutpb1 = ((g + 1) / num_generations)
-            elif adaptive_pb ["AGA", "GAGA"]:
+            elif adaptive_pb in ["AGA", "GAGA"]:
                 pass
             else:
                 raise ValueError(f"invalid adaptive_pb value: {adaptive_pb}")
@@ -557,5 +582,25 @@ def GA_mo(pop_size, num_generations,
                 sns.lineplot(list(range(len(values))), values)
                 plt.savefig(os.path.join(plot_dir, f"{m}.png"))
                 plt.clf()
+
+            # min max line plot
+            plt.plot(range(1, len(outcomes['avg']) + 1), outcomes['avg'], 'b-')
+            plt.plot(range(1, len(outcomes['max']) + 1), outcomes['max'], 'b-')
+            plt.plot(range(1, len(outcomes['max']) + 1), outcomes['min'], 'b-')
+            plt.fill_between(range(1, len(outcomes['avg']) + 1), outcomes['min'], outcomes['max'], color='b',
+                             alpha=0.2)
+            plt.xlabel("Generation")
+            plt.ylabel("Fitness")
+            plt.xticks = (range(len(outcomes['avg'])))
+            plt.savefig(os.path.join(plot_dir, f"min_max.png"))
+            plt.clf()
+
+            # scattered boxplot
+            data = pd.DataFrame(outcomes["pop_vals"], columns=["Generation", "Fitness"])
+            sns.boxplot(data=data, x="Generation", y="Fitness", color='white')
+            for i, row in data.iterrows():
+                plt.scatter(np.random.normal(row["Generation"], 0.04), row["Fitness"], alpha=0.7, color='skyblue')
+            plt.savefig(os.path.join(plot_dir, f"scatter_boxplot.png"))
+            plt.clf()
     with open(os.path.join(exp_dir, "outcomes.json"), "w") as f:
         json.dump(outcomes, f)

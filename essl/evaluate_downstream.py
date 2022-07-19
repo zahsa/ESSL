@@ -191,7 +191,6 @@ class finetune:
 
             return train_losses, test_acc
         else:
-            import pdb;pdb.set_trace()
             if report_all_metrics:
                 return train_losses, train_accs, val_losses, val_accs, None, None
 

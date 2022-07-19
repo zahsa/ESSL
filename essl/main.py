@@ -147,29 +147,29 @@ if __name__ == "__main__":
     t1 = time.time()
     GA(pop_size=2,
          ssl_epochs=1,
-         num_generations=1,
+         num_generations=3,
          backbone="largerCNN_backbone",
-         exp_dir=r"C:\Users\NoahB\Desktop\School\first_year_MCSC_(2021-2022)\research\ES_SSL\merge_MO_main\tests\GA",
+         exp_dir=r"/home/noah/ESSL/exps/testing/merge_main",
          use_tensorboard=False,
          evaluate_downstream_kwargs={"num_epochs":1},
          crossover="PMX",
          adaptive_pb="GAGA",
          use_test_acc=False,
-         device="cpu"
+         device="cuda"
          )
     print(f"GA TOOK {time.time()-t1} to run")
     t1 = time.time()
     GA_mo(pop_size=2,
        ssl_epochs=1,
-       num_generations=1,
+       num_generations=3,
        backbone="largerCNN_backbone",
-       exp_dir=r"C:\Users\NoahB\Desktop\School\first_year_MCSC_(2021-2022)\research\ES_SSL\merge_MO_main\tests\GA_mo",
+       exp_dir=r"/home/noah/ESSL/exps/testing/merge_essl",
        use_tensorboard=False,
        evaluate_downstream_kwargs={ "num_epochs": 1 },
        crossover="PMX",
        adaptive_pb="GAGA",
        use_test_acc=False,
-       device="cpu"
+       device="cuda"
        )
     print(f"GA_mo TOOK {time.time() - t1} to run")
 

@@ -83,7 +83,6 @@ class fitness_function:
 
         self.dataset = datasets.__dict__[dataset](seed=seed)
         self.backbone = backbone
-        # D3: store hparams in the object as attributes (add)
         self.ssl_epochs = ssl_epochs
         self.ssl_batch_size = ssl_batch_size
         self.evaluate_downstream_method = evaluate_downstream_method
@@ -166,7 +165,8 @@ class fitness_function_mo:
                  evaluate_downstream_method: str,
                  evaluate_downstream_kwargs: dict = { },
                  device: str = "cuda",
-                 seed: int = 10):
+                 seed: int = 10,
+                 use_test_acc=True):
 
         # set seeds #
         self.seed = seed
@@ -183,6 +183,7 @@ class fitness_function_mo:
         # self.ssl_task = ssl_task
         self.downstream_losses = { }
         self.device = device
+        self.use_test_acc = use_test_acc
         self.evaluate_downstream = evaluate_downstream.__dict__[self.evaluate_downstream_method](
             dataset=self.dataset,
             seed=self.seed,
@@ -221,16 +222,25 @@ class fitness_function_mo:
                                               device=device
                                               )
         train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(
-            representation,
-            report_all_metrics=True)
+                                                                        representation,
+                                                                        use_test_acc=self.use_test_acc,
+                                                                        report_all_metrics=True)
 
         print("time to eval: ", time.time() - t1)
         if return_losses:
             return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
         else:
-            # store the losses with id of chromosome
-            self.downstream_losses[chromosome.id] = train_losses
-            return test_acc,
+            # store the losses with id of chromosome, try statement to allow for use outside of GA
+            try:
+                self.downstream_losses[chromosome.id] = train_losses
+            except:
+                pass
+            # default no return losses,
+            if self.use_test_acc:
+                return test_acc,
+
+            else:
+                return max(val_accs),
 
 if __name__ == "__main__":
     c = chromosome.chromosome_generator()
