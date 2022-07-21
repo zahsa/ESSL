@@ -43,7 +43,7 @@ def GA(pop_size, num_generations,
                              adaptive_pb=None,
                              patience = -1,
                              discrete_intensity=False,
-                             use_test_acc=True
+                             eval_method="final test"
                             ):
 
     # set seeds #
@@ -76,7 +76,7 @@ def GA(pop_size, num_generations,
                                      evaluate_downstream_kwargs=evaluate_downstream_kwargs,
                                      device=device,
                                      seed=seed,
-                                     use_test_acc=use_test_acc)
+                                     eval_method=eval_method)
     toolbox.register("evaluate", eval)
     if crossover == "PMX":
         toolbox.register("mate", PMX)
@@ -332,7 +332,7 @@ def GA_mo(pop_size, num_generations,
                              adaptive_pb=None,
                              patience = -1,
                              discrete_intensity=False,
-                             use_test_acc=True
+                             eval_method="final test"
                             ):
 
     # set seeds #
@@ -364,7 +364,7 @@ def GA_mo(pop_size, num_generations,
                                      evaluate_downstream_kwargs=evaluate_downstream_kwargs,
                                      device=device,
                                      seed=seed,
-                                       use_test_acc=use_test_acc)
+                                       eval_method=eval_method)
     toolbox.register("evaluate", eval)
     if crossover == "PMX":
         toolbox.register("mate", PMX_mo)

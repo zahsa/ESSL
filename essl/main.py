@@ -24,7 +24,7 @@ from essl.GA import GA, GA_mo
 @click.option("--adaptive_pb", default=None, type=str, help="halving, generational")
 @click.option("--patience", default=-1, type=int, help="number of non-improving generations before early stopping")
 @click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
-@click.option("--use_test_acc", default=True, type=bool, help="whether or not to use test accuracy for fitness")
+@click.option("--eval_method", default="final test", type=str, help="[final test, best val test, best val]")
 def GA_cli(pop_size, num_generations,
                              cxpb,
                              mutpb,
@@ -45,7 +45,7 @@ def GA_cli(pop_size, num_generations,
                              adaptive_pb,
                              patience,
                              discrete_intensity,
-                             use_test_acc
+                             eval_method
                              ):
     GA(pop_size=pop_size,
          num_generations=num_generations,
@@ -68,7 +68,7 @@ def GA_cli(pop_size, num_generations,
          adaptive_pb=adaptive_pb,
          patience=patience,
          discrete_intensity=discrete_intensity,
-         use_test_acc=use_test_acc
+         eval_method=eval_method
          )
 
 
@@ -95,7 +95,7 @@ def GA_cli(pop_size, num_generations,
 @click.option("--adaptive_pb", default=None, type=str, help="halving, generational")
 @click.option("--patience", default=-1, type=int, help="number of non-improving generations before early stopping")
 @click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
-
+@click.option("--eval_method", default="final test", type=str, help="[final test, best val test, best val]")
 def GA_mo_cli(pop_size, num_generations,
                              cxpb1,
                              mutpb1,
@@ -116,7 +116,8 @@ def GA_mo_cli(pop_size, num_generations,
                              num_elite,
                              adaptive_pb,
                              patience,
-                             discrete_intensity
+                             discrete_intensity,
+                             eval_method
                              ):
     GA_mo(pop_size=pop_size,
          num_generations=num_generations,
@@ -139,7 +140,8 @@ def GA_mo_cli(pop_size, num_generations,
          num_elite=num_elite,
          adaptive_pb=adaptive_pb,
          patience=patience,
-         discrete_intensity=discrete_intensity
+         discrete_intensity=discrete_intensity,
+         eval_method=eval_method
          )
 
 if __name__ == "__main__":
@@ -154,22 +156,22 @@ if __name__ == "__main__":
          evaluate_downstream_kwargs={"num_epochs":1},
          crossover="PMX",
          adaptive_pb="GAGA",
-         use_test_acc=False,
+         eval_method="final test",
          device="cuda"
          )
     print(f"GA TOOK {time.time()-t1} to run")
-    t1 = time.time()
-    GA_mo(pop_size=2,
-       ssl_epochs=1,
-       num_generations=3,
-       backbone="largerCNN_backbone",
-       exp_dir=r"/home/noah/ESSL/exps/testing/merge_essl",
-       use_tensorboard=False,
-       evaluate_downstream_kwargs={ "num_epochs": 1 },
-       crossover="PMX",
-       adaptive_pb="GAGA",
-       use_test_acc=False,
-       device="cuda"
-       )
-    print(f"GA_mo TOOK {time.time() - t1} to run")
+    # t1 = time.time()
+    # GA_mo(pop_size=2,
+    #    ssl_epochs=1,
+    #    num_generations=3,
+    #    backbone="largerCNN_backbone",
+    #    exp_dir=r"/home/noah/ESSL/exps/testing/merge_essl",
+    #    use_tensorboard=False,
+    #    evaluate_downstream_kwargs={ "num_epochs": 1 },
+    #    crossover="PMX",
+    #    adaptive_pb="GAGA",
+    #    use_test_acc=False,
+    #    device="cuda"
+    #    )
+    # print(f"GA_mo TOOK {time.time() - t1} to run")
 

@@ -50,7 +50,6 @@ class pretext_task:
                   self.dataset,
                   self.batch_size,
                   self.num_epochs,
-                  #self.device
                   device
                          )
         return model, loss
@@ -74,7 +73,7 @@ class fitness_function:
                  evaluate_downstream_kwargs: dict = {},
                  device: str = "cuda",
                  seed: int=10,
-                 use_test_acc: bool = True):
+                 eval_method: str = "final test"):
         # set seeds #
         self.seed = seed
         torch.cuda.manual_seed_all(self.seed)
@@ -90,7 +89,7 @@ class fitness_function:
         self.ssl_task = ssl_task
         self.downstream_losses = {}
         self.device = device
-        self.use_test_acc = use_test_acc
+        self.eval_method = eval_method
         self.ssl_task = pretext_task(method=self.ssl_task,
                                 dataset=self.dataset,
                                 backbone=self.backbone,
@@ -131,7 +130,7 @@ class fitness_function:
         train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
                                                                                                        # device=device,
                                                                                                        report_all_metrics=True,
-                                                                                                       use_test_acc=self.use_test_acc)
+                                                                                                       eval_method=self.eval_method)
         if verbose:
             print("time to eval: ", time.time() - t1)
         if return_losses:
@@ -143,7 +142,7 @@ class fitness_function:
             except:
                 pass
             # default no return losses,
-            if self.use_test_acc:
+            if self.eval_method in ["best val test", "final test"]:
                 return test_acc,
 
             else:
@@ -166,7 +165,7 @@ class fitness_function_mo:
                  evaluate_downstream_kwargs: dict = { },
                  device: str = "cuda",
                  seed: int = 10,
-                 use_test_acc=True):
+                 eval_method="final test"):
 
         # set seeds #
         self.seed = seed
@@ -183,7 +182,7 @@ class fitness_function_mo:
         # self.ssl_task = ssl_task
         self.downstream_losses = { }
         self.device = device
-        self.use_test_acc = use_test_acc
+        self.eval_method = eval_method
         self.evaluate_downstream = evaluate_downstream.__dict__[self.evaluate_downstream_method](
             dataset=self.dataset,
             seed=self.seed,
@@ -207,7 +206,6 @@ class fitness_function_mo:
                  return_losses=False):
         if not device:
             device = self.device
-        # D2: make pretext task within eval call
         ssl_task = pretext_task(method=chromosome[0],
                                 dataset=self.dataset,
                                 backbone=self.backbone,
@@ -223,7 +221,7 @@ class fitness_function_mo:
                                               )
         train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(
                                                                         representation,
-                                                                        use_test_acc=self.use_test_acc,
+                                                                        eval_method=self.eval_method,
                                                                         report_all_metrics=True)
 
         print("time to eval: ", time.time() - t1)
@@ -236,7 +234,7 @@ class fitness_function_mo:
             except:
                 pass
             # default no return losses,
-            if self.use_test_acc:
+            if self.eval_method in ["best val test", "final test"]:
                 return test_acc,
 
             else:
@@ -253,7 +251,7 @@ if __name__ == "__main__":
                                  evaluate_downstream_method="finetune",
                                  evaluate_downstream_kwargs={"num_epochs":4},
                                  device="cuda",
-                                 use_test_acc=False)
+                                 eval_method="final test")
     fit = fitness(cc, return_losses=True)
     import pdb;
     pdb.set_trace()

@@ -67,7 +67,7 @@ class finetune:
     def __call__(self, backbone: torch.nn.Module,
                  device=None,
                  report_all_metrics: bool=False,
-                 use_test_acc: bool=True):
+                 eval_method: bool=True):
         
         if not device:
             device = self.device
@@ -98,7 +98,7 @@ class finetune:
         val_accs = []
         # store best validation for model #
         max_val_acc = -1
-        test_model = copy.deepcopy(model)
+        best_val_model = copy.deepcopy(model)
         if self.verbose:
             epochs = tqdm(range(self.num_epochs))
         else:
@@ -147,7 +147,7 @@ class finetune:
                 val_acc = 100.*correct/total
                 if val_acc > max_val_acc:
                     max_val_acc = val_acc
-                    test_model = copy.deepcopy(model)
+                    best_val_model = copy.deepcopy(model)
                 val_accs.append(val_acc)
                 # record loss
                 val_loss = running_loss / len(valloader)
@@ -161,14 +161,17 @@ class finetune:
                     self.writer.add_scalar('val/acc', val_acc, epoch)
             if scheduler:
                 scheduler.step()
-        if use_test_acc:
+        if eval_method in ["final test", "best val test"]:
             # evaluate #
             # add num workers
             testloader = torch.utils.data.DataLoader(self.dataset.test_data,
                                                      batch_size=self.batch_size,
                                                      shuffle=False,
                                                      num_workers=12)
-            test_model.eval()
+            if eval_method == "best val test":
+                model = best_val_model
+
+            model.eval()
             total = 0
             correct = 0
             running_loss = 0.0
@@ -177,7 +180,7 @@ class finetune:
                 for X, y in testloader:
                     inputs = X.to(device)
                     labels = y.to(device)
-                    outputs = test_model(inputs)
+                    outputs = model(inputs)
                     loss = criterion(outputs, labels)
                     running_loss += loss.item()
                     _, predicted = outputs.max(1)
@@ -190,10 +193,12 @@ class finetune:
                 return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
 
             return train_losses, test_acc
-        else:
+        elif eval_method == "best val":
             if report_all_metrics:
                 return train_losses, train_accs, val_losses, val_accs, None, None
 
             return train_losses, max(val_accs)
+        else:
+            raise ValueError("invalid eval method")
 
 

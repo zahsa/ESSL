@@ -12,7 +12,7 @@ SSL_TASKS = [
 
 class chromosome_generator:
     def __init__(self, augmentations=ops.DEFAULT_OPS,
-                 length=5, discrete=False, intensity_increments=10):
+                 length=5, discrete=False, seed=10, intensity_increments=10):
         """
         :param augmentations: dict containing operation, magnitude pairs-
         """
@@ -20,7 +20,7 @@ class chromosome_generator:
         self.augmentations = augmentations
         self.discrete = discrete
         self.intensity_increments = intensity_increments
-        # random.seed(seed)
+        random.seed(seed)
         # encode augmentations as integer
         self.pheno2geno = {
             a: i for i, a in enumerate(self.augmentations)
@@ -117,5 +117,4 @@ class chromosome_generator_mo:
 if __name__ == "__main__":
     c = chromosome_generator()
     print(c())
-    import pdb;
-    pdb.set_trace()
+
