@@ -1,5 +1,7 @@
 import click
-
+import sys
+import os
+import datetime
 from essl.GA import GA, GA_mo
 
 @click.command()
@@ -47,6 +49,14 @@ def GA_cli(pop_size, num_generations,
                              discrete_intensity,
                              eval_method
                              ):
+    # save args
+    with open(os.path.join(exp_dir, "params.txt"), "w") as f:
+         f.write(f"date: {datetime.datetime.now()}\n")
+         for a1, a2 in zip(sys.argv[1::2], sys.argv[2::2]):
+             f.write(a1 + " " + a2+"\n")
+
+    # save environment
+    os.system(f"pip freeze > {os.path.join(exp_dir, 'env.txt')}")
     GA(pop_size=pop_size,
          num_generations=num_generations,
          cxpb=cxpb,
@@ -119,7 +129,15 @@ def GA_mo_cli(pop_size, num_generations,
                              discrete_intensity,
                              eval_method
                              ):
-    GA_mo(pop_size=pop_size,
+     # save args
+     with open(os.path.join(exp_dir, "params.txt"), "w") as f:
+          f.write(f"date: {datetime.datetime.now()}\n")
+          for a1, a2 in zip(sys.argv[1::2], sys.argv[2::2]):
+               f.write(a1 + " " + a2 + "\n")
+
+     # save environment
+     os.system(f"pip freeze > {os.path.join(exp_dir, 'env.txt')}")
+     GA_mo(pop_size=pop_size,
          num_generations=num_generations,
          cxpb1=cxpb1,
          mutpb1=mutpb1,
