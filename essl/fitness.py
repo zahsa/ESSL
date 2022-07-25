@@ -74,6 +74,7 @@ class fitness_function:
                  device: str = "cuda",
                  seed: int=10,
                  eval_method: str = "final test"):
+
         # set seeds #
         self.seed = seed
         torch.cuda.manual_seed_all(self.seed)

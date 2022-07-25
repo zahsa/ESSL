@@ -67,22 +67,14 @@ class finetune:
     def __call__(self, backbone: torch.nn.Module,
                  device=None,
                  report_all_metrics: bool=False,
-                 eval_method: bool=True):
-        
-        if not device:
-            device = self.device
-        model = finetune_model(backbone.backbone, backbone.in_features, self.dataset.num_classes).to(device)
+                 eval_method: str="final test"):
+
+        model = finetune_model(backbone.backbone, backbone.in_features, self.dataset.num_classes).to(self.device)
         trainloader = torch.utils.data.DataLoader(self.dataset.train_data,
-                                                  batch_size=self.batch_size,
-                                                  shuffle=True,
-                                                  num_workers=12
-                                                  )
+                                                  batch_size=self.batch_size, shuffle=True)
         if self.dataset.val_data:
             valloader = torch.utils.data.DataLoader(self.dataset.val_data,
-                                                      batch_size=self.batch_size,
-                                                      shuffle=False,
-                                                      num_workers = 12
-                                                    )
+                                                    batch_size=self.batch_size, shuffle=False)
         else:
             valloader = None
         criterion = self.loss
@@ -96,32 +88,37 @@ class finetune:
         train_accs = []
         val_losses = []
         val_accs = []
-        # store best validation for model #
-        max_val_acc = -1
-        best_val_model = copy.deepcopy(model)
         if self.verbose:
             epochs = tqdm(range(self.num_epochs))
         else:
             epochs = range(self.num_epochs)
         for epoch in epochs:
             running_loss = 0.0
+            # train_y_true = torch.tensor([], dtype=torch.long).to(self.device)
+            # train_pred_probs = torch.tensor([]).to(self.device)
             correct = 0
             total = 0
             for X, y in trainloader:
-                inputs, labels = X.to(device), y.to(device)
+                inputs, labels = X.to(self.device), y.to(self.device)
                 optimizer.zero_grad()
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
-                running_loss+=loss.item()
+                running_loss += loss.item()
                 loss.backward()
                 optimizer.step()
                 # record predictions
+                # train_y_true = torch.cat((train_y_true, labels), 0)
+                # train_pred_probs = torch.cat((train_pred_probs, outputs), 0)
                 _, predicted = outputs.max(1)
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
             # compute acc
-            train_loss = running_loss/len(trainloader)
-            train_acc = 100.*correct/total
+            # train_y_true = train_y_true.cpu().numpy()
+            # _, train_y_pred = torch.max(train_pred_probs, 1)
+            # train_y_pred = train_y_pred.cpu().numpy()
+            # train_acc = accuracy_score(train_y_true, train_y_pred)
+            train_loss = running_loss / len(trainloader)
+            train_acc = 100. * correct / total
 
             # record acc
             train_accs.append(train_acc)
@@ -130,24 +127,29 @@ class finetune:
 
             if valloader:
                 with torch.no_grad():
+                    # val_y_true = torch.tensor([], dtype=torch.long).to(self.device)
+                    # val_pred_probs = torch.tensor([]).to(self.device)
                     running_loss = 0.0
                     total = 0
                     correct = 0
                     for X, y in valloader:
-                        inputs, labels = X.to(device), y.to(device)
+                        inputs, labels = X.to(self.device), y.to(self.device)
                         outputs = model(inputs)
                         loss = criterion(outputs, labels)
                         running_loss += loss.item()
                         # record predictions
+                        # val_y_true = torch.cat((val_y_true, labels), 0)
+                        # val_pred_probs = torch.cat((val_pred_probs, outputs), 0)
                         _, predicted = outputs.max(1)
                         total += labels.size(0)
                         correct += predicted.eq(labels).sum().item()
-
-                # record best acc for testing #
-                val_acc = 100.*correct/total
-                if val_acc > max_val_acc:
-                    max_val_acc = val_acc
-                    best_val_model = copy.deepcopy(model)
+                # compute acc
+                # val_y_true = val_y_true.cpu().numpy()
+                # _, val_y_pred = torch.max(val_pred_probs, 1)
+                # val_y_pred = val_y_pred.cpu().numpy()
+                # record acc
+                # val_acc = accuracy_score(val_y_true, val_y_pred)
+                val_acc = 100. * correct / total
                 val_accs.append(val_acc)
                 # record loss
                 val_loss = running_loss / len(valloader)
@@ -161,44 +163,40 @@ class finetune:
                     self.writer.add_scalar('val/acc', val_acc, epoch)
             if scheduler:
                 scheduler.step()
-        if eval_method in ["final test", "best val test"]:
-            # evaluate #
-            # add num workers
-            testloader = torch.utils.data.DataLoader(self.dataset.test_data,
-                                                     batch_size=self.batch_size,
-                                                     shuffle=False,
-                                                     num_workers=12)
-            if eval_method == "best val test":
-                model = best_val_model
 
-            model.eval()
-            total = 0
-            correct = 0
-            running_loss = 0.0
-            # deactivate autograd engine
-            with torch.no_grad():
-                for X, y in testloader:
-                    inputs = X.to(device)
-                    labels = y.to(device)
-                    outputs = model(inputs)
-                    loss = criterion(outputs, labels)
-                    running_loss += loss.item()
-                    _, predicted = outputs.max(1)
-                    total += labels.size(0)
-                    correct += predicted.eq(labels).sum().item()
-                test_loss = running_loss / len(testloader)
-            test_acc = 100.*correct/total
+        # evaluate #
+        testloader = torch.utils.data.DataLoader(self.dataset.test_data,
+                                                 batch_size=self.batch_size,
+                                                 shuffle=False)
+        model.eval()
+        # y_true = torch.tensor([], dtype=torch.long).to(self.device)
+        # pred_probs = torch.tensor([]).to(self.device)
+        total = 0
+        correct = 0
+        running_loss = 0.0
+        # deactivate autograd engine
+        with torch.no_grad():
+            for X, y in testloader:
+                inputs = X.to(self.device)
+                labels = y.to(self.device)
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                running_loss += loss.item()
+                # y_true = torch.cat((y_true, labels), 0)
+                # pred_probs = torch.cat((pred_probs, outputs), 0)
+                _, predicted = outputs.max(1)
+                total += labels.size(0)
+                correct += predicted.eq(labels).sum().item()
+            test_loss = running_loss / len(testloader)
 
-            if report_all_metrics:
-                return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
+        # y_true = y_true.cpu().numpy()
+        # _, y_pred = torch.max(pred_probs, 1)
+        # y_pred = y_pred.cpu().numpy()
+        test_acc = 100. * correct / total
 
-            return train_losses, test_acc
-        elif eval_method == "best val":
-            if report_all_metrics:
-                return train_losses, train_accs, val_losses, val_accs, None, None
+        if report_all_metrics:
+            return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
 
-            return train_losses, max(val_accs)
-        else:
-            raise ValueError("invalid eval method")
+        return train_losses, test_acc
 
 

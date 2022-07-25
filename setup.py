@@ -14,7 +14,7 @@ setup(
                       'charset-normalizer==2.0.12', 'deap==1.3.1', 'frozenlist==1.3.0',
                       'fsspec==2022.3.0', 'google-auth==2.6.6', 'google-auth-oauthlib==0.4.6',
                       'grpcio==1.44.0', 'hydra-core==1.1.2', 'idna==3.3', 'importlib-metadata==4.11.3',
-                      'joblib==1.1.0', 'lightly==1.2.21', 'lightly-utils==0.0.2', 'Markdown==3.3.6',
+                      'joblib==1.1.0', 'lightly==1.2.23', 'lightly-utils==0.0.2', 'Markdown==3.3.6',
                       'multidict==6.0.2', 'numpy', 'oauthlib==3.2.0', 'omegaconf==2.1.2',
                       'packaging==21.3', 'pandas', 'Pillow', 'protobuf==3.20.1',
                       'pyasn1==0.4.8', 'pyasn1-modules==0.2.8', 'pyDeprecate==0.3.2', 'pyparsing==3.0.8',
