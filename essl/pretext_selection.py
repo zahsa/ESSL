@@ -39,7 +39,7 @@ class SimCLR(nn.Module):
             collate_fn=collate_fn,
             shuffle=True,
             drop_last=True,
-            num_workers=8,
+            num_workers=12,
         )
 
         criterion = NTXentLoss().to(device)
