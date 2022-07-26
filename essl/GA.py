@@ -329,7 +329,8 @@ def GA_mo(pop_size, num_generations,
                              chromosome_length=5,
                              seed=10,
                              num_elite=0,
-                             adaptive_pb=None,
+                             adaptive_pb1=None,
+                             adaptive_pb2=None,
                              patience = -1,
                              discrete_intensity=False,
                              eval_method="final test"
@@ -424,34 +425,61 @@ def GA_mo(pop_size, num_generations,
         # Clone the selected individuals and elite individuals
         offspring = list(map(toolbox.clone, offspring)) + list(map(toolbox.clone, elite))
         random.shuffle(offspring)
-        if adaptive_pb:
-            if adaptive_pb == "halving":
+        if adaptive_pb1:
+            if adaptive_pb1 == "halving":
                 # drop_rate = 0.5, gen_drop = 3
                 if not g % 3 and g != 0:
                     mutpb1/=2
-            elif adaptive_pb == "generational":
+            elif adaptive_pb1 == "generational":
                 cxpb1 = 1 - ((g + 1) / num_generations)
                 mutpb1 = ((g + 1) / num_generations)
-            elif adaptive_pb in ["AGA", "GAGA"]:
+            elif adaptive_pb1 in ["AGA", "GAGA"]:
                 pass
             else:
-                raise ValueError(f"invalid adaptive_pb value: {adaptive_pb}")
+                raise ValueError(f"invalid adaptive_pb1 value: {adaptive_pb1}")
+
+        if adaptive_pb2:
+            if adaptive_pb2 == "halving":
+                # drop_rate = 0.5, gen_drop = 3
+                if not g % 3 and g != 0:
+                    mutpb2/=2
+            elif adaptive_pb2 == "generational":
+                cxpb2 = 1 - ((g + 1) / num_generations)
+                mutpb2 = ((g + 1) / num_generations)
+            elif adaptive_pb2 in ["AGA", "GAGA"]:
+                pass
+            else:
+                raise ValueError(f"invalid adaptive_pb2 value: {adaptive_pb2}")
         # Apply crossover and mutation on the offspring
         # split list in two
         children = []
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
-            if adaptive_pb == "AGA":
+            if adaptive_pb1 == "AGA":
                 f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
                 if f_p >= mean:
                     cxpb1 = (max_f - f_p) / (max_f - mean)
                 else:
                     cxpb1 = 1
-            elif adaptive_pb == "GAGA":
+            elif adaptive_pb1 == "GAGA":
                 f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
                 if f_p >= global_max_mean:
                     cxpb1 = (global_max - f_p) / (global_max - global_max_mean)
                 else:
                     cxpb1 = 1
+
+            if adaptive_pb2 == "AGA":
+                f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
+                if f_p >= mean:
+                    cxpb2 = (max_f - f_p) / (max_f - mean)
+                else:
+                    cxpb2 = 1
+            elif adaptive_pb2 == "GAGA":
+                f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
+                if f_p >= global_max_mean:
+                    cxpb2 = (global_max - f_p) / (global_max - global_max_mean)
+                else:
+                    cxpb2 = 1
+
             if random.random() < cxpb1:
 
                 toolbox.mate(child1, child2)
@@ -470,7 +498,7 @@ def GA_mo(pop_size, num_generations,
                 child1[0] = c2_task
 
         for mutant in offspring:
-            if adaptive_pb == "AGA":
+            if adaptive_pb1 == "AGA":
                 # if child was just created this round, mutate
                 if mutant.id in children:
                     continue
@@ -479,7 +507,7 @@ def GA_mo(pop_size, num_generations,
                     mutpb1 = (0.5 * (max_f - mutant.fitness.values[0])) / (max_f - mean)
                 else:
                     mutpb1 = 0.5
-            elif adaptive_pb == "GAGA":
+            elif adaptive_pb1 == "GAGA":
                 # if child was just created this round, mutate
                 if mutant.id in children:
                     continue
@@ -488,6 +516,26 @@ def GA_mo(pop_size, num_generations,
                     mutpb1 = (0.5 * (global_max - mutant.fitness.values[0])) / (global_max - global_max_mean)
                 else:
                     mutpb1 = 0.5
+
+            if adaptive_pb2 == "AGA":
+                # if child was just created this round, mutate
+                if mutant.id in children:
+                    continue
+                # modify mutpb
+                if mutant.fitness.values[0] >= mean:
+                    mutpb2 = (0.5 * (max_f - mutant.fitness.values[0])) / (max_f - mean)
+                else:
+                    mutpb1 = 0.5
+            elif adaptive_pb2 == "GAGA":
+                # if child was just created this round, mutate
+                if mutant.id in children:
+                    continue
+                # modify mutpb
+                if mutant.fitness.values[0] >= global_max_mean:
+                    mutpb2 = (0.5 * (global_max - mutant.fitness.values[0])) / (global_max - global_max_mean)
+                else:
+                    mutpb2 = 0.5
+
             if random.random() < mutpb1:
                 toolbox.mutate(mutant)
                 # generate new id for mutant

@@ -102,7 +102,8 @@ def GA_cli(pop_size, num_generations,
 @click.option("--save_plots", default=True, type=bool, help="whether to save plots or not")
 @click.option("--chromosome_length", default=5, type=int, help="number of genes in chromosome")
 @click.option("--num_elite", default=0, type=int, help="number of elite chromosomes")
-@click.option("--adaptive_pb", default=None, type=str, help="halving, generational")
+@click.option("--adaptive_pb1", default=None, type=str, help="halving, generational, AGA")
+@click.option("--adaptive_pb2", default=None, type=str, help="halving, generational, AGA")
 @click.option("--patience", default=-1, type=int, help="number of non-improving generations before early stopping")
 @click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
 @click.option("--eval_method", default="final test", type=str, help="[final test, best val test, best val]")
@@ -124,7 +125,8 @@ def GA_mo_cli(pop_size, num_generations,
                              save_plots,
                              chromosome_length,
                              num_elite,
-                             adaptive_pb,
+                             adaptive_pb1,
+                             adaptive_pb2,
                              patience,
                              discrete_intensity,
                              eval_method
@@ -156,7 +158,8 @@ def GA_mo_cli(pop_size, num_generations,
          save_plots=save_plots,
          chromosome_length=chromosome_length,
          num_elite=num_elite,
-         adaptive_pb=adaptive_pb,
+         adaptive_pb1=adaptive_pb1,
+         adaptive_pb2=adaptive_pb2,
          patience=patience,
          discrete_intensity=discrete_intensity,
          eval_method=eval_method

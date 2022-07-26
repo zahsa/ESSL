@@ -30,9 +30,15 @@ class SimCLR(nn.Module):
 
 
 
-    def fit(self, transform, dataset, batch_size, num_epochs, device="cuda"):
+    def fit(self, dataset, batch_size, num_epochs, transform=None,  device="cuda"):
         self.to(device)
-        collate_fn = BaseCollateFunction(transform)
+        if transform:
+            collate_fn = BaseCollateFunction(transform)
+        else:
+            collate_fn = SimCLRCollateFunction(
+                         input_size = 32,
+                         gaussian_blur = 0.,
+            )
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,
@@ -90,16 +96,18 @@ class SwaV(nn.Module):
         p = self.prototypes(x)
         return p
 
-    def fit(self, transform, dataset, batch_size, num_epochs, device="cuda"):
+    def fit(self, dataset, batch_size, num_epochs, transform=None,  device="cuda"):
         self.to(device)
         # employ multi crop collate to custom transform
         # cropping hparams taken directly from Swav collate
-        collate_fn = MultiCropCollateFunction( crop_sizes = [24, 8],
-                                               crop_counts = [2, 4],
-                                               crop_min_scales = [0.14, 0.05],
-                                               crop_max_scales = [1.0, 0.14],
-                                               transforms=transform)
-
+        if transform:
+            collate_fn = MultiCropCollateFunction( crop_sizes = [24, 8],
+                                                   crop_counts = [2, 4],
+                                                   crop_min_scales = [0.14, 0.05],
+                                                   crop_max_scales = [1.0, 0.14],
+                                                   transforms=transform)
+        else:
+            collate_fn = SwaVCollateFunction()
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,
@@ -172,9 +180,12 @@ class BYOL(nn.Module):
         z = z.detach()
         return z
 
-    def fit(self, transform, dataset, batch_size, num_epochs, device="cuda"):
+    def fit(self, dataset, batch_size, num_epochs, transform=None,  device="cuda"):
         self.to(device)
-        collate_fn = BaseCollateFunction(transform)
+        if transform:
+            collate_fn = BaseCollateFunction(transform)
+        else:
+            collate_fn = SimCLRCollateFunction(input_size=32)
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,
@@ -241,11 +252,14 @@ class NNCLR(nn.Module):
         self.projection_head = NNCLRProjectionHead(self.in_features, 512, 128)
         self.prediction_head = NNCLRPredictionHead(128, 512, 128)
 
-    def fit(self, transform, dataset, batch_size, num_epochs, device="cuda"):
+    def fit(self, dataset, batch_size, num_epochs, transform=None, device="cuda"):
         self.to(device)
         memory_bank = NNMemoryBankModule(size=4096)
         memory_bank.to(device)
-        collate_fn = BaseCollateFunction(transform)
+        if transform:
+            collate_fn = BaseCollateFunction(transform)
+        else:
+            collate_fn = SimCLRCollateFunction(input_size=32)
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,

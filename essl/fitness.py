@@ -46,10 +46,11 @@ class pretext_task:
         if not device:
             device = self.device
         model = self.model(self.backbone(self.seed))
-        loss = model.fit(transform,
+        loss = model.fit(
                   self.dataset,
                   self.batch_size,
                   self.num_epochs,
+                  transform,
                   device
                          )
         return model, loss
@@ -115,6 +116,39 @@ class fitness_function:
 
     def clear_downstream_losses(self):
         self.downstream_losses = {}
+
+    def evaluate_default_aug(self, device=None,
+                                   return_losses=False,
+                                   verbose=True):
+        if not device:
+            device = self.device
+        t1 = time.time()
+        # pass none to transform to get default aug
+        representation, ssl_losses = self.ssl_task(transform=None,
+                                                   device=device
+                                                   )
+        # return all metrics by default
+        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
+                                                                                                       # device=device,
+                                                                                                       report_all_metrics=True,
+                                                                                                       eval_method=self.eval_method)
+        if verbose:
+            print("time to eval: ", time.time() - t1)
+        if return_losses:
+            return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
+        else:
+            # store the losses with id of chromosome, try statement to allow for use outside of GA
+            try:
+                self.downstream_losses[chromosome.id] = train_losses
+            except:
+                pass
+            # default no return losses,
+            if self.eval_method in ["best val test", "final test"]:
+                return test_acc,
+
+            else:
+                return max(val_accs),
+
     def __call__(self, chromosome,
                  device=None,
                  return_losses=False,
