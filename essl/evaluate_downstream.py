@@ -52,10 +52,7 @@ class finetune:
         self.device = device
         self.verbose = verbose
         self.seed = seed
-        # set seeds #
-        # torch.cuda.manual_seed_all(self.seed)
-        # torch.cuda.manual_seed(self.seed)
-        # torch.manual_seed(self.seed)
+
 
         if tensorboard_dir:
             if not os.path.isdir(tensorboard_dir):
@@ -88,14 +85,14 @@ class finetune:
         train_accs = []
         val_losses = []
         val_accs = []
+        max_val_acc = -1
+        max_val_model = copy.deepcopy(model.state_dict())
         if self.verbose:
             epochs = tqdm(range(self.num_epochs))
         else:
             epochs = range(self.num_epochs)
         for epoch in epochs:
             running_loss = 0.0
-            # train_y_true = torch.tensor([], dtype=torch.long).to(self.device)
-            # train_pred_probs = torch.tensor([]).to(self.device)
             correct = 0
             total = 0
             for X, y in trainloader:
@@ -107,16 +104,10 @@ class finetune:
                 loss.backward()
                 optimizer.step()
                 # record predictions
-                # train_y_true = torch.cat((train_y_true, labels), 0)
-                # train_pred_probs = torch.cat((train_pred_probs, outputs), 0)
                 _, predicted = outputs.max(1)
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
             # compute acc
-            # train_y_true = train_y_true.cpu().numpy()
-            # _, train_y_pred = torch.max(train_pred_probs, 1)
-            # train_y_pred = train_y_pred.cpu().numpy()
-            # train_acc = accuracy_score(train_y_true, train_y_pred)
             train_loss = running_loss / len(trainloader)
             train_acc = 100. * correct / total
 
@@ -127,8 +118,6 @@ class finetune:
 
             if valloader:
                 with torch.no_grad():
-                    # val_y_true = torch.tensor([], dtype=torch.long).to(self.device)
-                    # val_pred_probs = torch.tensor([]).to(self.device)
                     running_loss = 0.0
                     total = 0
                     correct = 0
@@ -138,19 +127,17 @@ class finetune:
                         loss = criterion(outputs, labels)
                         running_loss += loss.item()
                         # record predictions
-                        # val_y_true = torch.cat((val_y_true, labels), 0)
-                        # val_pred_probs = torch.cat((val_pred_probs, outputs), 0)
                         _, predicted = outputs.max(1)
                         total += labels.size(0)
                         correct += predicted.eq(labels).sum().item()
                 # compute acc
-                # val_y_true = val_y_true.cpu().numpy()
-                # _, val_y_pred = torch.max(val_pred_probs, 1)
-                # val_y_pred = val_y_pred.cpu().numpy()
-                # record acc
-                # val_acc = accuracy_score(val_y_true, val_y_pred)
                 val_acc = 100. * correct / total
+                if val_acc > max_val_acc:
+                    max_val_acc = val_acc
+                    # deepcopy model weights so we do not refer to the same statedict
+                    max_val_model = copy.deepcopy(model.state_dict())
                 val_accs.append(val_acc)
+
                 # record loss
                 val_loss = running_loss / len(valloader)
                 val_losses.append(val_loss)
@@ -168,9 +155,10 @@ class finetune:
         testloader = torch.utils.data.DataLoader(self.dataset.test_data,
                                                  batch_size=self.batch_size,
                                                  shuffle=False)
+
+        if eval_method == "best val acc":
+            model.load_state_dict(max_val_model)
         model.eval()
-        # y_true = torch.tensor([], dtype=torch.long).to(self.device)
-        # pred_probs = torch.tensor([]).to(self.device)
         total = 0
         correct = 0
         running_loss = 0.0
@@ -188,10 +176,6 @@ class finetune:
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
             test_loss = running_loss / len(testloader)
-
-        # y_true = y_true.cpu().numpy()
-        # _, y_pred = torch.max(pred_probs, 1)
-        # y_pred = y_pred.cpu().numpy()
         test_acc = 100. * correct / total
 
         if report_all_metrics:
@@ -212,26 +196,26 @@ if __name__ == "__main__":
     after it was instantiated
     
     """
-    ft = finetune(Cifar10())
+    ft = finetune(Cifar10(), num_epochs = 1)
     torch.manual_seed(10)
     backbone1 = backbones.largerCNN_backbone()
-    model1 = ft(backbone1)
-    torch.manual_seed(10)
-    backbone2 = backbones.largerCNN_backbone()
-    model2 = ft(backbone2)
-    def compare_models(model_1, model_2):
-        models_differ = 0
-        for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):
-            if torch.equal(key_item_1[1], key_item_2[1]):
-                pass
-            else:
-                models_differ += 1
-                if (key_item_1[0] == key_item_2[0]):
-                    print('Mismtach found at', key_item_1[0])
-                else:
-                    raise Exception
-        if models_differ == 0:
-            print('Models match perfectly! :)')
-
-
-    compare_models(model1, model2)
+    model1 = ft(backbone1, eval_method = "best val acc")
+    # torch.manual_seed(10)
+    # backbone2 = backbones.largerCNN_backbone()
+    # model2 = ft(backbone2)
+    # def compare_models(model_1, model_2):
+    #     models_differ = 0
+    #     for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):
+    #         if torch.equal(key_item_1[1], key_item_2[1]):
+    #             pass
+    #         else:
+    #             models_differ += 1
+    #             if (key_item_1[0] == key_item_2[0]):
+    #                 print('Mismtach found at', key_item_1[0])
+    #             else:
+    #                 raise Exception
+    #     if models_differ == 0:
+    #         print('Models match perfectly! :)')
+    #
+    #
+    # compare_models(model1, model2)

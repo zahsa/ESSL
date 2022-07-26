@@ -59,8 +59,6 @@ class pretext_task:
         return model, loss
 
 
-
-
 class fitness_function:
     """
     proposed approach:
