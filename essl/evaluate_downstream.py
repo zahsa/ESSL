@@ -53,9 +53,9 @@ class finetune:
         self.verbose = verbose
         self.seed = seed
         # set seeds #
-        torch.cuda.manual_seed_all(self.seed)
-        torch.cuda.manual_seed(self.seed)
-        torch.manual_seed(self.seed)
+        # torch.cuda.manual_seed_all(self.seed)
+        # torch.cuda.manual_seed(self.seed)
+        # torch.manual_seed(self.seed)
 
         if tensorboard_dir:
             if not os.path.isdir(tensorboard_dir):
@@ -68,7 +68,7 @@ class finetune:
                  device=None,
                  report_all_metrics: bool=False,
                  eval_method: str="final test"):
-
+        torch.manual_seed(self.seed)
         model = finetune_model(backbone.backbone, backbone.in_features, self.dataset.num_classes).to(self.device)
         trainloader = torch.utils.data.DataLoader(self.dataset.train_data,
                                                   batch_size=self.batch_size, shuffle=True)
@@ -200,3 +200,38 @@ class finetune:
         return train_losses, test_acc
 
 
+if __name__ == "__main__":
+    from essl import backbones
+    from datasets import Cifar10
+    import torch
+    """
+    confirm that when we use the ft twice on two generated models using
+    manual seed, the exact same networks are produced.
+    
+    Note when this run the model was returned on line 73 of fitness function right 
+    after it was instantiated
+    
+    """
+    ft = finetune(Cifar10())
+    torch.manual_seed(10)
+    backbone1 = backbones.largerCNN_backbone()
+    model1 = ft(backbone1)
+    torch.manual_seed(10)
+    backbone2 = backbones.largerCNN_backbone()
+    model2 = ft(backbone2)
+    def compare_models(model_1, model_2):
+        models_differ = 0
+        for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):
+            if torch.equal(key_item_1[1], key_item_2[1]):
+                pass
+            else:
+                models_differ += 1
+                if (key_item_1[0] == key_item_2[0]):
+                    print('Mismtach found at', key_item_1[0])
+                else:
+                    raise Exception
+        if models_differ == 0:
+            print('Models match perfectly! :)')
+
+
+    compare_models(model1, model2)

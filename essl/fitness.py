@@ -45,7 +45,10 @@ class pretext_task:
                  ):
         if not device:
             device = self.device
-        model = self.model(self.backbone(self.seed))
+        torch.manual_seed(self.seed)
+        backbone = self.backbone()
+        torch.manual_seed(self.seed)
+        model = self.model(backbone)
         loss = model.fit(
                   self.dataset,
                   self.batch_size,
@@ -78,9 +81,9 @@ class fitness_function:
 
         # set seeds #
         self.seed = seed
-        torch.cuda.manual_seed_all(self.seed)
-        torch.cuda.manual_seed(self.seed)
-        torch.manual_seed(self.seed)
+        # torch.cuda.manual_seed_all(self.seed)
+        # torch.cuda.manual_seed(self.seed)
+        # torch.manual_seed(self.seed)
 
         self.dataset = datasets.__dict__[dataset](seed=seed)
         self.backbone = backbone
@@ -204,9 +207,9 @@ class fitness_function_mo:
 
         # set seeds #
         self.seed = seed
-        torch.cuda.manual_seed_all(self.seed)
-        torch.cuda.manual_seed(self.seed)
-        torch.manual_seed(self.seed)
+        # torch.cuda.manual_seed_all(self.seed)
+        # torch.cuda.manual_seed(self.seed)
+        # torch.manual_seed(self.seed)
 
         self.dataset = datasets.__dict__[dataset](seed=seed)
         self.backbone = backbone
@@ -276,6 +279,14 @@ class fitness_function_mo:
                 return max(val_accs),
 
 if __name__ == "__main__":
+
+    """
+    testing to see that the model weights are fixed, note that to do this the pretext task function
+    
+    returns both the backbone and model immediately after it is created (line 52), subsequently the fitness function
+    reutrns both of these models (line 167).
+    """
+
     c = chromosome.chromosome_generator()
     cc = c()
     fitness = fitness_function(dataset="Cifar10",
@@ -287,9 +298,28 @@ if __name__ == "__main__":
                                  evaluate_downstream_kwargs={"num_epochs":4},
                                  device="cuda",
                                  eval_method="final test")
-    fit = fitness(cc, return_losses=True)
-    import pdb;
-    pdb.set_trace()
+    bb1, model1 = fitness(cc, return_losses=True)
+    bb2, model2 = fitness(cc, return_losses=True)
 
+    def compare_models(model_1, model_2):
+        models_differ = 0
+        for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):
+            if torch.equal(key_item_1[1], key_item_2[1]):
+                pass
+            else:
+                models_differ += 1
+                if (key_item_1[0] == key_item_2[0]):
+                    print('Mismtach found at', key_item_1[0])
+                else:
+                    raise Exception
+        if models_differ == 0:
+            print('Models match perfectly! :)')
+
+    compare_models(bb1, bb2)
+    compare_models(model1, model2)
+    """
+    Models match perfectly! :)
+    Models match perfectly! :)
+    """
 
 
