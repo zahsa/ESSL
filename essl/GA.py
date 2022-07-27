@@ -275,7 +275,7 @@ def GA(pop_size, num_generations,
 
         outcomes["min"].append(min_f)
         outcomes["max"].append(max_f)
-        outcomes["avg"].append(mean)
+        outcomes["avg"].append(f_bar)
         outcomes["std"].append(std)
         outcomes["pop_vals"]+=[[g, f] for f in fits]
         outcomes["chromos"] += [[g, c] for c in pop]

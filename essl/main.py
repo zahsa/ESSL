@@ -173,9 +173,10 @@ if __name__ == "__main__":
     t1 = time.time()
     GA(pop_size=2,
          ssl_epochs=1,
-         num_generations=3,
+         num_generations=2,
+         ssl_task = "SimSiam",
          backbone="largerCNN_backbone",
-         exp_dir=r"/home/noah/ESSL/exps/testing/merge_main",
+         exp_dir=r"/home/noah/ESSL/exps/testing/ssl_methods",
          use_tensorboard=False,
          evaluate_downstream_kwargs={"num_epochs":1},
          crossover="PMX",
