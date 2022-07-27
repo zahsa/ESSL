@@ -119,8 +119,10 @@ def GA(pop_size, num_generations,
     history = [max_ind.fitness.values[0]]
     no_improvement_count = 0
 
-    mean = sum([f[0] for f in fitnesses]) / len(fitnesses)
-    global_max_mean = mean
+    f_bar = sum([f[0] for f in fitnesses]) / len(fitnesses)
+    averages = [f_bar]
+    f_global_bar = sum(averages)/len(averages)
+    global_max_mean = f_bar
     max_f = max_ind.fitness.values[0]
     global_max = max_f
     # evolution loop
@@ -144,7 +146,7 @@ def GA(pop_size, num_generations,
             elif adaptive_pb == "generational":
                 cxpb = 1 - ((g + 1) / num_generations)
                 mutpb = ((g + 1) / num_generations)
-            elif adaptive_pb in ["AGA", "GAGA"]:
+            elif adaptive_pb in ["AGA", "GAGA", "GAGA_V2"]:
                 pass
             else:
                 raise ValueError(f"invalid adaptive_pb value: {adaptive_pb}")
@@ -154,8 +156,8 @@ def GA(pop_size, num_generations,
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
             if adaptive_pb == "AGA":
                 f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
-                if f_p >= mean:
-                    cxpb = (max_f - f_p) / (max_f - mean)
+                if f_p >= f_bar:
+                    cxpb = (max_f - f_p) / (max_f - f_bar)
                 else:
                     cxpb = 1
             elif adaptive_pb == "GAGA":
@@ -164,6 +166,13 @@ def GA(pop_size, num_generations,
                     cxpb = (global_max - f_p) / (global_max - global_max_mean)
                 else:
                     cxpb = 1
+            elif adaptive_pb == "GAGA_V2":
+                f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
+                if f_p >= f_bar:
+                    cxpb = (global_max - f_p) / (global_max - f_global_bar)
+                else:
+                    cxpb = 1
+
             if random.random() < cxpb:
 
                 toolbox.mate(child1, child2)
@@ -182,8 +191,8 @@ def GA(pop_size, num_generations,
                 if mutant.id in children:
                     continue
                 # modify mutpb
-                if mutant.fitness.values[0] >= mean:
-                    mutpb = (0.5 * (max_f - mutant.fitness.values[0])) / (max_f - mean)
+                if mutant.fitness.values[0] >= f_bar:
+                    mutpb = (0.5 * (max_f - mutant.fitness.values[0])) / (max_f - f_bar)
                 else:
                     mutpb = 0.5
             elif adaptive_pb == "GAGA":
@@ -193,6 +202,16 @@ def GA(pop_size, num_generations,
                 # modify mutpb
                 if mutant.fitness.values[0] >= global_max_mean:
                     mutpb = (0.5 * (global_max - mutant.fitness.values[0])) / (global_max - global_max_mean)
+                else:
+                    mutpb = 0.5
+
+            elif adaptive_pb == "GAGA_V2":
+                # if child was just created this round, mutate
+                if mutant.id in children:
+                    continue
+                # modify mutpb
+                if mutant.fitness.values[0] >= f_bar:
+                    mutpb = (0.5 * (global_max - mutant.fitness.values[0])) / (global_max - f_global_bar)
                 else:
                     mutpb = 0.5
             if random.random() < mutpb:
@@ -219,22 +238,25 @@ def GA(pop_size, num_generations,
                 max_ind = ind
 
         length = len(pop)
-        mean = sum(fits) / length
-        global_max_mean = max(global_max_mean, mean)
+        f_bar = sum(fits) / length
+        averages.append(f_bar)
+        f_global_bar = sum(averages) / len(averages)
+        global_max_mean = max(global_max_mean, f_bar)
         sum2 = sum(x * x for x in fits)
-        std = abs(sum2 / length - mean ** 2) ** 0.5
+        std = abs(sum2 / length - f_bar ** 2) ** 0.5
         min_f = min_ind.fitness.values[0]
         max_f = max_ind.fitness.values[0]
         global_max = max(global_max, max_f)
+
         history.append(max_f)
         print("  Min %s" % min_f)
         print("  Max %s" % max_f)
-        print("  Avg %s" % mean)
+        print("  Avg %s" % f_bar)
         print("  Std %s" % std)
         if writer:
             writer.add_scalar('Min Fitness', min_f, g)
             writer.add_scalar('Max Fitness', max_f, g)
-            writer.add_scalar('Avg Fitness', mean, g)
+            writer.add_scalar('Avg Fitness', f_bar, g)
             writer.add_scalar('Std dev', std, g)
             for f in fits:
                 writer.add_scalar('population', f, g)
@@ -333,7 +355,8 @@ def GA_mo(pop_size, num_generations,
                              adaptive_pb2=None,
                              patience = -1,
                              discrete_intensity=False,
-                             eval_method="final test"
+                             eval_method="final test",
+                             ssl_tasks="v1"
                             ):
 
     # set seeds #
@@ -352,7 +375,8 @@ def GA_mo(pop_size, num_generations,
     creator.create("Fitness", base.Fitness, weights=(100.0,)) # maximize accuracy
     creator.create("Individual", list, fitness=creator.Fitness, id=None)
     toolbox.register("gen_aug", chromosome_generator_mo(length=chromosome_length,
-                                                     discrete=discrete_intensity
+                                                     discrete=discrete_intensity,
+                                                     ssl_tasks=ssl_tasks
                                                      ))
     toolbox.register("individual", tools.initIterate, creator.Individual,
                      toolbox.gen_aug)
@@ -408,8 +432,8 @@ def GA_mo(pop_size, num_generations,
     history = [max_ind.fitness.values[0]]
     no_improvement_count = 0
 
-    mean = sum([f[0] for f in fitnesses]) / len(fitnesses)
-    global_max_mean = mean
+    f_bar = sum([f[0] for f in fitnesses]) / len(fitnesses)
+    global_max_mean = f_bar
     max_f = max_ind.fitness.values[0]
     global_max = max_f
     # evolution loop
@@ -433,7 +457,7 @@ def GA_mo(pop_size, num_generations,
             elif adaptive_pb1 == "generational":
                 cxpb1 = 1 - ((g + 1) / num_generations)
                 mutpb1 = ((g + 1) / num_generations)
-            elif adaptive_pb1 in ["AGA", "GAGA"]:
+            elif adaptive_pb1 in ["AGA", "GAGA", "GAGA_V2"]:
                 pass
             else:
                 raise ValueError(f"invalid adaptive_pb1 value: {adaptive_pb1}")
@@ -446,7 +470,7 @@ def GA_mo(pop_size, num_generations,
             elif adaptive_pb2 == "generational":
                 cxpb2 = 1 - ((g + 1) / num_generations)
                 mutpb2 = ((g + 1) / num_generations)
-            elif adaptive_pb2 in ["AGA", "GAGA"]:
+            elif adaptive_pb2 in ["AGA", "GAGA", "GAGA_V2"]:
                 pass
             else:
                 raise ValueError(f"invalid adaptive_pb2 value: {adaptive_pb2}")
@@ -456,8 +480,8 @@ def GA_mo(pop_size, num_generations,
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
             if adaptive_pb1 == "AGA":
                 f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
-                if f_p >= mean:
-                    cxpb1 = (max_f - f_p) / (max_f - mean)
+                if f_p >= f_bar:
+                    cxpb1 = (max_f - f_p) / (max_f - f_bar)
                 else:
                     cxpb1 = 1
             elif adaptive_pb1 == "GAGA":
@@ -467,16 +491,30 @@ def GA_mo(pop_size, num_generations,
                 else:
                     cxpb1 = 1
 
+            elif adaptive_pb1 == "GAGA_V2":
+                f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
+                if f_p >= f_bar:
+                    cxpb1 = (global_max - f_p) / (global_max - f_global_bar)
+                else:
+                    cxpb1 = 1
+
             if adaptive_pb2 == "AGA":
                 f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
-                if f_p >= mean:
-                    cxpb2 = (max_f - f_p) / (max_f - mean)
+                if f_p >= f_bar:
+                    cxpb2 = (max_f - f_p) / (max_f - f_bar)
                 else:
                     cxpb2 = 1
             elif adaptive_pb2 == "GAGA":
                 f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
                 if f_p >= global_max_mean:
                     cxpb2 = (global_max - f_p) / (global_max - global_max_mean)
+                else:
+                    cxpb2 = 1
+
+            elif adaptive_pb2 == "GAGA_V2":
+                f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
+                if f_p >= f_bar:
+                    cxpb2 = (global_max - f_p) / (global_max - f_global_bar)
                 else:
                     cxpb2 = 1
 
@@ -503,8 +541,8 @@ def GA_mo(pop_size, num_generations,
                 if mutant.id in children:
                     continue
                 # modify mutpb
-                if mutant.fitness.values[0] >= mean:
-                    mutpb1 = (0.5 * (max_f - mutant.fitness.values[0])) / (max_f - mean)
+                if mutant.fitness.values[0] >= f_bar:
+                    mutpb1 = (0.5 * (max_f - mutant.fitness.values[0])) / (max_f - f_bar)
                 else:
                     mutpb1 = 0.5
             elif adaptive_pb1 == "GAGA":
@@ -516,14 +554,23 @@ def GA_mo(pop_size, num_generations,
                     mutpb1 = (0.5 * (global_max - mutant.fitness.values[0])) / (global_max - global_max_mean)
                 else:
                     mutpb1 = 0.5
+            elif adaptive_pb1 == "GAGA_V2":
+                # if child was just created this round, mutate
+                if mutant.id in children:
+                    continue
+                # modify mutpb
+                if mutant.fitness.values[0] >= f_bar:
+                    mutpb1 = (0.5 * (global_max - mutant.fitness.values[0])) / (global_max - f_global_bar)
+                else:
+                    mutpb1 = 0.5
 
             if adaptive_pb2 == "AGA":
                 # if child was just created this round, mutate
                 if mutant.id in children:
                     continue
                 # modify mutpb
-                if mutant.fitness.values[0] >= mean:
-                    mutpb2 = (0.5 * (max_f - mutant.fitness.values[0])) / (max_f - mean)
+                if mutant.fitness.values[0] >= f_bar:
+                    mutpb2 = (0.5 * (max_f - mutant.fitness.values[0])) / (max_f - f_bar)
                 else:
                     mutpb1 = 0.5
             elif adaptive_pb2 == "GAGA":
@@ -533,6 +580,15 @@ def GA_mo(pop_size, num_generations,
                 # modify mutpb
                 if mutant.fitness.values[0] >= global_max_mean:
                     mutpb2 = (0.5 * (global_max - mutant.fitness.values[0])) / (global_max - global_max_mean)
+                else:
+                    mutpb2 = 0.5
+            elif adaptive_pb2 == "GAGA_V2":
+                # if child was just created this round, mutate
+                if mutant.id in children:
+                    continue
+                # modify mutpb
+                if mutant.fitness.values[0] >= f_bar:
+                    mutpb2 = (0.5 * (global_max - mutant.fitness.values[0])) / (global_max - f_global_bar)
                 else:
                     mutpb2 = 0.5
 
@@ -565,22 +621,22 @@ def GA_mo(pop_size, num_generations,
                 max_ind = ind
 
         length = len(pop)
-        mean = sum(fits) / length
-        global_max_mean = max(global_max_mean, mean)
+        f_bar = sum(fits) / length
+        global_max_mean = max(global_max_mean, f_bar)
         sum2 = sum(x * x for x in fits)
-        std = abs(sum2 / length - mean ** 2) ** 0.5
+        std = abs(sum2 / length - f_bar ** 2) ** 0.5
         min_f = min_ind.fitness.values[0]
         max_f = max_ind.fitness.values[0]
         global_max = max(global_max, max_f)
         history.append(max_f)
         print("  Min %s" % min_f)
         print("  Max %s" % max_f)
-        print("  Avg %s" % mean)
+        print("  Avg %s" % f_bar)
         print("  Std %s" % std)
         if writer:
             writer.add_scalar('Min Fitness', min_f, g)
             writer.add_scalar('Max Fitness', max_f, g)
-            writer.add_scalar('Avg Fitness', mean, g)
+            writer.add_scalar('Avg Fitness', f_bar, g)
             writer.add_scalar('Std dev', std, g)
             for f in fits:
                 writer.add_scalar('population', f, g)
@@ -599,7 +655,7 @@ def GA_mo(pop_size, num_generations,
 
         outcomes["min"].append(min_f)
         outcomes["max"].append(max_f)
-        outcomes["avg"].append(mean)
+        outcomes["avg"].append(f_bar)
         outcomes["std"].append(std)
         outcomes["pop_vals"]+=[[g, f] for f in fits]
         outcomes["chromos"] += [[g, c] for c in pop]

@@ -107,6 +107,7 @@ def GA_cli(pop_size, num_generations,
 @click.option("--patience", default=-1, type=int, help="number of non-improving generations before early stopping")
 @click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
 @click.option("--eval_method", default="final test", type=str, help="[final test, best val test, best val]")
+@click.option("--ssl_tasks", default="v1", type=str, help="[v1, v2]")
 def GA_mo_cli(pop_size, num_generations,
                              cxpb1,
                              mutpb1,
@@ -129,7 +130,8 @@ def GA_mo_cli(pop_size, num_generations,
                              adaptive_pb2,
                              patience,
                              discrete_intensity,
-                             eval_method
+                             eval_method,
+                             ssl_tasks
                              ):
      # save args
      with open(os.path.join(exp_dir, "params.txt"), "w") as f:
@@ -162,7 +164,8 @@ def GA_mo_cli(pop_size, num_generations,
          adaptive_pb2=adaptive_pb2,
          patience=patience,
          discrete_intensity=discrete_intensity,
-         eval_method=eval_method
+         eval_method=eval_method,
+         ssl_tasks=ssl_tasks
          )
 
 if __name__ == "__main__":
