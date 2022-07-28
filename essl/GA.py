@@ -132,11 +132,11 @@ def GA(pop_size, num_generations,
         elite_indexes = sorted(range(len(pop)), key=lambda i: pop[i].fitness.values[0], reverse=True)[:num_elite]
         elite = [pop[i] for i in elite_indexes]
         non_elite = [pop[i] for i in range(len(pop)) if i not in elite_indexes]
-
+        print(elite)
         # Select the next generation individuals
         offspring = toolbox.select(non_elite, len(non_elite))
         # Clone the selected individuals and elite individuals
-        offspring = list(map(toolbox.clone, offspring)) + list(map(toolbox.clone, elite))
+        offspring = list(map(toolbox.clone, offspring))
         random.shuffle(offspring)
         if adaptive_pb:
             if adaptive_pb == "halving":
@@ -174,7 +174,6 @@ def GA(pop_size, num_generations,
                     cxpb = 1
 
             if random.random() < cxpb:
-
                 toolbox.mate(child1, child2)
                 # generate new ids for children
                 child1.id = next(id_gen)
@@ -219,7 +218,9 @@ def GA(pop_size, num_generations,
                 # generate new id for mutant
                 mutant.id = next(id_gen)
                 del mutant.fitness.values
-
+        # combine elite and non elite
+        offspring = offspring + list(map(toolbox.clone, elite))
+        print(offspring)
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
         fitnesses = map(toolbox.evaluate, invalid_ind)
@@ -600,7 +601,7 @@ def GA_mo(pop_size, num_generations,
             # D5: mutation of ssl gene
             # randomly switch SSL task
             if random.random() < mutpb2:
-                mutant.ssl_task = random.choice(SSL_TASKS)
+                mutant.ssl_task = random.choice(SSL_TASKS[ssl_tasks])
 
 
         # Evaluate the individuals with an invalid fitness
