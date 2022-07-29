@@ -16,4 +16,6 @@ essl_GA \
   --crossover PMX \
   --chromosome_length 3 \
   --selection roulette \
-  --adaptive_pb AGA
+  --adaptive_pb AGA \
+  --eval_method "best val test" \
+  --num_elite 2

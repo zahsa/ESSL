@@ -21,6 +21,8 @@ from lightly.loss import BarlowTwinsLoss
 from lightly.models.modules import SimSiamProjectionHead
 from lightly.models.modules import SimSiamPredictionHead
 
+from lightly.data import MoCoCollateFunction
+from lightly.models.modules import MoCoProjectionHead
 
 
 class SimCLR(nn.Module):
@@ -267,8 +269,9 @@ class MoCo(nn.Module):
     def __init__(self, backbone):
         super().__init__()
 
-        self.backbone = backbone
-        self.projection_head = MoCoProjectionHead(in_features, 512, 128)
+        self.backbone = backbone.backbone
+        self.in_features = backbone.in_features
+        self.projection_head = MoCoProjectionHead(self.in_features, 512, 128)
 
         self.backbone_momentum = copy.deepcopy(self.backbone)
         self.projection_head_momentum = copy.deepcopy(self.projection_head)
@@ -276,8 +279,43 @@ class MoCo(nn.Module):
         deactivate_requires_grad(self.backbone_momentum)
         deactivate_requires_grad(self.projection_head_momentum)
 
-    def fit(self, transform, dataset, batch_size, num_epochs, device="cuda"):
-        raise NotImplementedError
+    def fit(self, dataset, batch_size, num_epochs,transform=None,  device="cuda"):
+        self.to(device)
+        if transform:
+            collate_fn = BaseCollateFunction(transform)
+        else:
+            collate_fn = MoCoCollateFunction(input_size=32)
+
+        dataloader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=batch_size,
+            collate_fn=collate_fn,
+            shuffle=True,
+            drop_last=True,
+            num_workers=12,
+        )
+
+        criterion = NTXentLoss(memory_bank_size=4096)
+        optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
+
+        losses = []
+        for epoch in range(num_epochs):
+            total_loss = 0
+            for (x_query, x_key), _, _ in dataloader:
+                update_momentum(self.backbone, self.backbone_momentum, m=0.99)
+                update_momentum(self.projection_head, self.projection_head_momentum, m=0.99)
+                x_query = x_query.to(device)
+                x_key = x_key.to(device)
+                query = self.forward(x_query)
+                key = self.forward_momentum(x_key)
+                loss = criterion(query, key)
+                total_loss += loss.detach()
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+            avg_loss = total_loss / len(dataloader)
+            losses.append(avg_loss)
+        return losses
 
     def forward(self, x):
         query = self.backbone(x).flatten(start_dim=1)

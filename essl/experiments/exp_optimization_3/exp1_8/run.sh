@@ -5,12 +5,12 @@ essl_GA \
   --mutpb 0.8 \
   --dataset Cifar10 \
   --backbone largerCNN_backbone \
-  --ssl_task BarlowTwins \
+  --ssl_task MoCo \
   --ssl_epochs 10 \
   --ssl_batch_size 256 \
   --evaluate_downstream_method finetune \
   --device cuda \
-  --exp_dir ESSL/experiments/exp_optimization_3/exp1_5 \
+  --exp_dir ESSL/experiments/exp_optimization_3/exp1_8 \
   --use_tensorboard True \
   --save_plots True \
   --crossover PMX \

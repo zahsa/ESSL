@@ -132,7 +132,6 @@ def GA(pop_size, num_generations,
         elite_indexes = sorted(range(len(pop)), key=lambda i: pop[i].fitness.values[0], reverse=True)[:num_elite]
         elite = [pop[i] for i in elite_indexes]
         non_elite = [pop[i] for i in range(len(pop)) if i not in elite_indexes]
-        print(elite)
         # Select the next generation individuals
         offspring = toolbox.select(non_elite, len(non_elite))
         # Clone the selected individuals and elite individuals
@@ -220,7 +219,6 @@ def GA(pop_size, num_generations,
                 del mutant.fitness.values
         # combine elite and non elite
         offspring = offspring + list(map(toolbox.clone, elite))
-        print(offspring)
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
         fitnesses = map(toolbox.evaluate, invalid_ind)
