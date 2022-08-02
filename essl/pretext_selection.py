@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 import copy
-from lightly.data import SimCLRCollateFunction, BaseCollateFunction, MultiCropCollateFunction
+from lightly.data import SimCLRCollateFunction, BaseCollateFunction, MultiCropCollateFunction, SwaVCollateFunction
 from lightly.loss import NTXentLoss
 from lightly.models.modules import SimCLRProjectionHead
 from lightly.loss import SwaVLoss

@@ -307,10 +307,10 @@ def GA(pop_size, num_generations,
                 plt.clf()
 
             # min max line plot
-            plt.plot(range(1, len(outcomes['avg']) + 1), outcomes['avg'], 'b-', label=ssl_task)
-            plt.plot(range(1, len(outcomes['max']) + 1), outcomes['max'], 'b-')
-            plt.plot(range(1, len(outcomes['max']) + 1), outcomes['min'], 'b-')
-            plt.fill_between(range(1, len(outcomes['avg']) + 1), outcomes['min'], outcomes['max'], color='b',
+            plt.plot(range(len(outcomes['avg'])), outcomes['avg'], 'b-', label=ssl_task)
+            plt.plot(range(len(outcomes['max'])), outcomes['max'], 'b-')
+            plt.plot(range(len(outcomes['max'])), outcomes['min'], 'b-')
+            plt.fill_between(range(len(outcomes['avg'])), outcomes['min'], outcomes['max'], color='b',
                              alpha=0.2)
             plt.xlabel("Generation")
             plt.ylabel("Fitness")
@@ -687,10 +687,10 @@ def GA_mo(pop_size, num_generations,
                 plt.clf()
 
             # min max line plot
-            plt.plot(range(1, len(outcomes['avg']) + 1), outcomes['avg'], 'b-')
-            plt.plot(range(1, len(outcomes['max']) + 1), outcomes['max'], 'b-')
-            plt.plot(range(1, len(outcomes['max']) + 1), outcomes['min'], 'b-')
-            plt.fill_between(range(1, len(outcomes['avg']) + 1), outcomes['min'], outcomes['max'], color='b',
+            plt.plot(range(len(outcomes['avg'])), outcomes['avg'], 'b-')
+            plt.plot(range(len(outcomes['max'])), outcomes['max'], 'b-')
+            plt.plot(range(len(outcomes['max'])), outcomes['min'], 'b-')
+            plt.fill_between(range(len(outcomes['avg'])), outcomes['min'], outcomes['max'], color='b',
                              alpha=0.2)
             plt.xlabel("Generation")
             plt.ylabel("Fitness")
