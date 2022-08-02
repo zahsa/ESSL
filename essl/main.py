@@ -173,6 +173,7 @@ if __name__ == "__main__":
     t1 = time.time()
     GA(pop_size=3,
          ssl_epochs=1,
+        dataset="SVHN",
          num_generations=2,
          ssl_task = "MoCo",
          backbone="largerCNN_backbone",

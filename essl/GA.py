@@ -102,7 +102,6 @@ def GA(pop_size, num_generations,
     id_gen = id_generator()
     for ind in pop:
         ind.id = next(id_gen)
-
     fitnesses = list(map(toolbox.evaluate, pop))
     for ind, fit in zip(pop, fitnesses):
        ind.fitness.values = fit

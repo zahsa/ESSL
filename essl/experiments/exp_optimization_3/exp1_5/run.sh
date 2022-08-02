@@ -10,7 +10,7 @@ essl_GA \
   --ssl_batch_size 256 \
   --evaluate_downstream_method finetune \
   --device cuda \
-  --exp_dir ESSL/experiments/exp_optimization_3/exp1_5 \
+  --exp_dir /home/noah/ESSL/exps/iteration4/exp1_5 \
   --use_tensorboard True \
   --save_plots True \
   --crossover PMX \
