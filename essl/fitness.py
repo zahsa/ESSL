@@ -84,7 +84,6 @@ class fitness_function:
         # torch.manual_seed(self.seed)
 
         self.dataset = datasets.__dict__[dataset](seed=seed)
-        import pdb;pdb.set_trace()
         self.backbone = backbone
         self.ssl_epochs = ssl_epochs
         self.ssl_batch_size = ssl_batch_size
