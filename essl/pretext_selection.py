@@ -396,8 +396,7 @@ class SimSiam(nn.Module):
             collate_fn = BaseCollateFunction(transform)
         else:
             collate_fn = SimCLRCollateFunction(
-                input_size=32,
-                gaussian_blur=0.,
+                input_size=32
             )
 
         dataloader = torch.utils.data.DataLoader(

@@ -119,7 +119,7 @@ class fitness_function:
         self.downstream_losses = {}
 
     def evaluate_default_aug(self, device=None,
-                                   return_losses=False,
+                                   report_all_metrics=False,
                                    verbose=True):
         if not device:
             device = self.device
@@ -129,14 +129,24 @@ class fitness_function:
                                                    device=device
                                                    )
         # return all metrics by default
-        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
+        train_losses, train_accs, val_losses, val_accs, test_acc, top_2, top_5, test_loss = self.evaluate_downstream(representation,
                                                                                                        # device=device,
                                                                                                        report_all_metrics=True,
                                                                                                        eval_method=self.eval_method)
         if verbose:
             print("time to eval: ", time.time() - t1)
-        if return_losses:
-            return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
+        if report_all_metrics:
+            return  {
+                "final_ssl_loss": float(ssl_losses[-1]),
+                "final_train_loss": float(train_losses[-1]),
+                "final_train_acc": float(train_accs[-1]),
+                "final_val_loss": float(val_losses[-1]),
+                "final_val_acc": float(val_accs[-1]),
+                "test_acc": float(test_acc),
+                "top_2": float(top_2),
+                "top_5": float(top_5),
+                "test_loss": float(test_loss)
+            }
         else:
             # store the losses with id of chromosome, try statement to allow for use outside of GA
             try:
@@ -152,7 +162,7 @@ class fitness_function:
 
     def __call__(self, chromosome,
                  device=None,
-                 return_losses=False,
+                 report_all_metrics=True,
                  verbose=True):
         if not device:
             device = self.device
@@ -163,16 +173,29 @@ class fitness_function:
                                                    device=device
                                                    )
         # return all metrics by default
-        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
-                                                                                                       # device=device,
+        train_losses, train_accs, val_losses, val_accs, test_acc, top_2, top_5, test_loss = self.evaluate_downstream(representation,
                                                                                                        report_all_metrics=True,
                                                                                                        eval_method=self.eval_method)
         if verbose:
             print("time to eval: ", time.time() - t1)
-        if return_losses:
-            return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
-        else:
+        if report_all_metrics:
             # store the losses with id of chromosome, try statement to allow for use outside of GA
+            try:
+                self.downstream_losses[chromosome.id] = train_losses
+            except:
+                pass
+            return {
+                "final_ssl_loss": float(ssl_losses[-1]),
+                "final_train_loss": float(train_losses[-1]),
+                "final_train_acc": float(train_accs[-1]),
+                "final_val_loss": float(val_losses[-1]),
+                "final_val_acc": float(val_accs[-1]),
+                "test_acc": float(test_acc),
+                "top_2": float(top_2),
+                "top_5": float(top_5),
+                "test_loss": float(test_loss)
+            }
+        else:
             try:
                 self.downstream_losses[chromosome.id] = train_losses
             except:
@@ -239,7 +262,7 @@ class fitness_function_mo:
 
     def __call__(self, chromosome,
                  device=None,
-                 return_losses=False):
+                 report_all_metrics=True):
         if not device:
             device = self.device
         ssl_task = pretext_task(method=chromosome[0],
@@ -255,14 +278,29 @@ class fitness_function_mo:
         representation, ssl_losses = ssl_task(transform,
                                               device=device
                                               )
-        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(
+        train_losses, train_accs, val_losses, val_accs, test_acc, top_2, top_5, test_loss = self.evaluate_downstream(
                                                                         representation,
                                                                         eval_method=self.eval_method,
                                                                         report_all_metrics=True)
 
         print("time to eval: ", time.time() - t1)
-        if return_losses:
-            return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
+        if report_all_metrics:
+            # store the losses with id of chromosome, try statement to allow for use outside of GA
+            try:
+                self.downstream_losses[chromosome.id] = train_losses
+            except:
+                pass
+            return {
+                "final_ssl_loss": float(ssl_losses[-1]),
+                "final_train_loss": float(train_losses[-1]),
+                "final_train_acc": float(train_accs[-1]),
+                "final_val_loss": float(val_losses[-1]),
+                "final_val_acc": float(val_accs[-1]),
+                "test_acc": float(test_acc),
+                "top_2": float(top_2),
+                "top_5": float(top_5),
+                "test_loss": float(test_loss)
+            }
         else:
             # store the losses with id of chromosome, try statement to allow for use outside of GA
             try:
@@ -272,7 +310,6 @@ class fitness_function_mo:
             # default no return losses,
             if self.eval_method in ["best val test", "final test"]:
                 return test_acc,
-
             else:
                 return max(val_accs),
 
@@ -296,8 +333,8 @@ if __name__ == "__main__":
                                  evaluate_downstream_kwargs={"num_epochs":4},
                                  device="cuda",
                                  eval_method="final test")
-    bb1, model1 = fitness(cc, return_losses=True)
-    bb2, model2 = fitness(cc, return_losses=True)
+    bb1, model1 = fitness(cc, report_all_metrics=True)
+    bb2, model2 = fitness(cc, report_all_metrics=True)
 
     def compare_models(model_1, model_2):
         models_differ = 0

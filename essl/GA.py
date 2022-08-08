@@ -43,7 +43,7 @@ def GA(pop_size, num_generations,
                              adaptive_pb=None,
                              patience = -1,
                              discrete_intensity=False,
-                             eval_method="final test"
+                             eval_method="best val test"
                             ):
 
     # set seeds #
@@ -96,18 +96,24 @@ def GA(pop_size, num_generations,
     elif selection == "roulette":
         toolbox.register("select", tools.selRoulette)
 
-    # init pop and fitnesses #
+    # init pop #
     pop = toolbox.population(n=pop_size)
-    # generate ids for each individual
+    # init id generator #
     id_gen = id_generator()
+    # init fitnesses #
+    pop_metrics = {}
     for ind in pop:
         ind.id = next(id_gen)
-    fitnesses = list(map(toolbox.evaluate, pop))
-    for ind, fit in zip(pop, fitnesses):
-       ind.fitness.values = fit
-    outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std", "chromos"]}
+        ind_metrics = toolbox.evaluate(ind)
+        ind_metrics["gen"] = 0
+        ind_metrics["id"] = ind.id
+        ind.fitness.values = ind_metrics["test_acc"],
+        pop_metrics[ind.id] = ind_metrics
 
-    # Early stopping
+    # init records of GA #
+    outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std", "chromos"]}
+    total_pop_metrics = {0:pop_metrics}
+    # get min and max of population #
     max_ind = pop[0]
     min_ind = pop[0]
     for ind in pop:
@@ -115,30 +121,47 @@ def GA(pop_size, num_generations,
             min_ind = ind
         elif ind.fitness.values[0] > max_ind.fitness.values[0]:
             max_ind = ind
-    history = [max_ind.fitness.values[0]]
-    no_improvement_count = 0
 
-    f_bar = sum([f[0] for f in fitnesses]) / len(fitnesses)
+    fits = [ind.fitness.values[0] for ind in pop]
+    length = len(pop)
+    f_bar = sum(fits) / length
     averages = [f_bar]
-    f_global_bar = sum(averages)/len(averages)
+    f_global_bar = sum(averages) / len(averages)
     global_max_mean = f_bar
+    sum2 = sum(x * x for x in fits)
+    std = abs(sum2 / length - f_bar ** 2) ** 0.5
+    min_f = min_ind.fitness.values[0]
     max_f = max_ind.fitness.values[0]
     global_max = max_f
+
+    outcomes["min"].append(min_f)
+    outcomes["max"].append(max_f)
+    outcomes["avg"].append(f_bar)
+    outcomes["std"].append(std)
+    outcomes["pop_vals"] += [[0, f] for f in fits]
+    outcomes["chromos"] += [[0, c] for c in pop]
+
+    # early stopping
+    history = [max_ind.fitness.values[0]]
+    no_improvement_count = 0
     # evolution loop
-    for g in range(num_generations):
+    for g in range(1, num_generations+1):
         print("-- Generation %i --" % g)
-        # sort offspring in descending order
+        # sort offspring in descending order #
         elite_indexes = sorted(range(len(pop)), key=lambda i: pop[i].fitness.values[0], reverse=True)[:num_elite]
+        # seperate elite and non elite #
         elite = [pop[i] for i in elite_indexes]
         non_elite = [pop[i] for i in range(len(pop)) if i not in elite_indexes]
-        # Select the next generation individuals
+        # Select the next generation individuals from non elite #
         offspring = toolbox.select(non_elite, len(non_elite))
-        # Clone the selected individuals and elite individuals
+        # Clone the selected individuals and elite individuals #
         offspring = list(map(toolbox.clone, offspring))
+        # shuffle population #
         random.shuffle(offspring)
+        # apply adaptive pbs
         if adaptive_pb:
             if adaptive_pb == "halving":
-                # drop_rate = 0.5, gen_drop = 3
+                # drop_rate = 0.5, gen_drop = 3 #
                 if not g % 3 and g != 0:
                     mutpb/=2
             elif adaptive_pb == "generational":
@@ -148,10 +171,11 @@ def GA(pop_size, num_generations,
                 pass
             else:
                 raise ValueError(f"invalid adaptive_pb value: {adaptive_pb}")
-        # Apply crossover and mutation on the offspring
-        # split list in two
+
+        # apply crossover #
         children = []
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
+            # apply aga, gaga or gaga-v2 if selected #
             if adaptive_pb == "AGA":
                 f_p = max([child1.fitness.values[0], child2.fitness.values[0]])
                 if f_p >= f_bar:
@@ -181,22 +205,22 @@ def GA(pop_size, num_generations,
                 del child1.fitness.values
                 del child2.fitness.values
 
-
+        # apply mutation #
         for mutant in offspring:
             if adaptive_pb == "AGA":
-                # if child was just created this round, mutate
+                # if child was just created this round, mutate #
                 if mutant.id in children:
                     continue
-                # modify mutpb
+                # modify mutpb #
                 if mutant.fitness.values[0] >= f_bar:
                     mutpb = (0.5 * (max_f - mutant.fitness.values[0])) / (max_f - f_bar)
                 else:
                     mutpb = 0.5
             elif adaptive_pb == "GAGA":
-                # if child was just created this round, mutate
+                # if child was just created this round, mutate #
                 if mutant.id in children:
                     continue
-                # modify mutpb
+                # modify mutpb #
                 if mutant.fitness.values[0] >= global_max_mean:
                     mutpb = (0.5 * (global_max - mutant.fitness.values[0])) / (global_max - global_max_mean)
                 else:
@@ -213,18 +237,26 @@ def GA(pop_size, num_generations,
                     mutpb = 0.5
             if random.random() < mutpb:
                 toolbox.mutate(mutant)
-                # generate new id for mutant
+                # generate new id for mutant #
                 mutant.id = next(id_gen)
                 del mutant.fitness.values
-        # combine elite and non elite
+        # combine elite and non elite #
         offspring = offspring + list(map(toolbox.clone, elite))
-        # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = map(toolbox.evaluate, invalid_ind)
-        for ind, fit in zip(invalid_ind, fitnesses):
-            ind.fitness.values = fit
+
+        pop_metrics = {}
+        for ind in offspring:
+            # evaluate invalid pop
+            if not ind.fitness.valid:
+                ind_metrics = toolbox.evaluate(ind)
+                ind_metrics["gen"] = g
+                ind_metrics["id"] = ind.id
+                ind.fitness.values = ind_metrics["test_acc"],
+            else:
+                ind_metrics = total_pop_metrics[g-1][ind.id]
+            pop_metrics[ind.id] = ind_metrics
+        total_pop_metrics[g] = pop_metrics
         pop[:] = offspring
-        # Gather all the fitnesses in one list and print the stats
+        # Gather all the pop_fitnesses in one list and print the stats
         fits = [ind.fitness.values[0] for ind in pop]
 
         min_ind = pop[0]
@@ -328,6 +360,8 @@ def GA(pop_size, num_generations,
 
     with open(os.path.join(exp_dir, "outcomes.json"), "w") as f:
         json.dump(outcomes, f)
+    with open(os.path.join(exp_dir, "pop_metrics.json"), "w") as f:
+        json.dump(total_pop_metrics, f)
 
 def GA_mo(pop_size, num_generations,
                              cxpb1 =  0.2,
@@ -407,19 +441,24 @@ def GA_mo(pop_size, num_generations,
     elif selection == "roulette":
         toolbox.register("select", tools.selRoulette)
 
-    # init pop and fitnesses #
+        # init pop #
     pop = toolbox.population(n=pop_size)
-    # generate ids for each individual
+    # init id generator #
     id_gen = id_generator()
+    # init fitnesses #
+    pop_metrics = { }
     for ind in pop:
         ind.id = next(id_gen)
+        ind_metrics = toolbox.evaluate(ind)
+        ind_metrics["gen"] = 0
+        ind_metrics["id"] = ind.id
+        ind.fitness.values = ind_metrics["test_acc"],
+        pop_metrics[ind.id] = ind_metrics
 
-    fitnesses = list(map(toolbox.evaluate, pop))
-    for ind, fit in zip(pop, fitnesses):
-       ind.fitness.values = fit
-    outcomes = {m:[] for m in ["pop_vals", "min", "max", "avg", "std", "chromos"]}
-
-    # Early stopping
+    # init records of GA #
+    outcomes = { m: [] for m in ["pop_vals", "min", "max", "avg", "std", "chromos"] }
+    total_pop_metrics = { 0: pop_metrics }
+    # get min and max of population #
     max_ind = pop[0]
     min_ind = pop[0]
     for ind in pop:
@@ -427,15 +466,31 @@ def GA_mo(pop_size, num_generations,
             min_ind = ind
         elif ind.fitness.values[0] > max_ind.fitness.values[0]:
             max_ind = ind
-    history = [max_ind.fitness.values[0]]
-    no_improvement_count = 0
 
-    f_bar = sum([f[0] for f in fitnesses]) / len(fitnesses)
+    fits = [ind.fitness.values[0] for ind in pop]
+    length = len(pop)
+    f_bar = sum(fits) / length
+    averages = [f_bar]
+    f_global_bar = sum(averages) / len(averages)
     global_max_mean = f_bar
+    sum2 = sum(x * x for x in fits)
+    std = abs(sum2 / length - f_bar ** 2) ** 0.5
+    min_f = min_ind.fitness.values[0]
     max_f = max_ind.fitness.values[0]
     global_max = max_f
+
+    outcomes["min"].append(min_f)
+    outcomes["max"].append(max_f)
+    outcomes["avg"].append(f_bar)
+    outcomes["std"].append(std)
+    outcomes["pop_vals"] += [[0, f] for f in fits]
+    outcomes["chromos"] += [[0, c] for c in pop]
+
+    # early stopping
+    history = [max_ind.fitness.values[0]]
+    no_improvement_count = 0
     # evolution loop
-    for g in range(num_generations):
+    for g in range(1, num_generations+1):
         print("-- Generation %i --" % g)
         # sort offspring in descending order
         elite_indexes = sorted(range(len(pop)), key=lambda i: pop[i].fitness.values[0], reverse=True)[:num_elite]
@@ -600,32 +655,44 @@ def GA_mo(pop_size, num_generations,
             if random.random() < mutpb2:
                 mutant.ssl_task = random.choice(SSL_TASKS[ssl_tasks])
 
+                # combine elite and non elite #
+                offspring = offspring + list(map(toolbox.clone, elite))
 
-        # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = map(toolbox.evaluate, invalid_ind)
-        for ind, fit in zip(invalid_ind, fitnesses):
-            ind.fitness.values = fit
-        pop[:] = offspring
-        # Gather all the fitnesses in one list and print the stats
-        fits = [ind.fitness.values[0] for ind in pop]
+                pop_metrics = { }
+                for ind in offspring:
+                    # evaluate invalid pop
+                    if not ind.fitness.valid:
+                        ind_metrics = toolbox.evaluate(ind)
+                        ind_metrics["gen"] = g
+                        ind_metrics["id"] = ind.id
+                        ind.fitness.values = ind_metrics["test_acc"],
+                    else:
+                        ind_metrics = total_pop_metrics[g - 1][ind.id]
+                    pop_metrics[ind.id] = ind_metrics
+                total_pop_metrics[g] = pop_metrics
+                pop[:] = offspring
+                # Gather all the pop_fitnesses in one list and print the stats
+                fits = [ind.fitness.values[0] for ind in pop]
 
-        max_ind = pop[0]
-        min_ind = pop[0]
-        for ind in pop:
-            if ind.fitness.values[0] < min_ind.fitness.values[0]:
-                min_ind = ind
-            elif ind.fitness.values[0] > max_ind.fitness.values[0]:
-                max_ind = ind
+                min_ind = pop[0]
+                max_ind = pop[0]
+                for ind in pop:
+                    if ind.fitness.values[0] < min_ind.fitness.values[0]:
+                        min_ind = ind
+                    elif ind.fitness.values[0] > max_ind.fitness.values[0]:
+                        max_ind = ind
 
-        length = len(pop)
-        f_bar = sum(fits) / length
-        global_max_mean = max(global_max_mean, f_bar)
-        sum2 = sum(x * x for x in fits)
-        std = abs(sum2 / length - f_bar ** 2) ** 0.5
-        min_f = min_ind.fitness.values[0]
-        max_f = max_ind.fitness.values[0]
-        global_max = max(global_max, max_f)
+                length = len(pop)
+                f_bar = sum(fits) / length
+                averages.append(f_bar)
+                f_global_bar = sum(averages) / len(averages)
+                global_max_mean = max(global_max_mean, f_bar)
+                sum2 = sum(x * x for x in fits)
+                std = abs(sum2 / length - f_bar ** 2) ** 0.5
+                min_f = min_ind.fitness.values[0]
+                max_f = max_ind.fitness.values[0]
+                global_max = max(global_max, max_f)
+
         history.append(max_f)
         print("  Min %s" % min_f)
         print("  Max %s" % max_f)
@@ -706,3 +773,5 @@ def GA_mo(pop_size, num_generations,
             plt.clf()
     with open(os.path.join(exp_dir, "outcomes.json"), "w") as f:
         json.dump(outcomes, f)
+    with open(os.path.join(exp_dir, "pop_metrics.json"), "w") as f:
+        json.dump(total_pop_metrics, f)

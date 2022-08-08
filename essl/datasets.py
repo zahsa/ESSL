@@ -128,3 +128,41 @@ class SVHN(Data):
         self.ssl_data = torchvision.datasets.SVHN("datasets/SVHN", download=True,
                                                        split="train")
         self.num_classes = 10
+
+class ImageNet_aug:
+    def __init__(self):
+        self.train = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ])
+        self.val = transforms.Compose([
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ])
+        self.test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ])
+
+class ImageNet(Data):
+    def __init__(self, transform=ImageNet_aug(), seed=10):
+        super().__init__(seed=seed)
+        self.train_data = torchvision.datasets.ImageNet("datasets/ImageNet", download=True,
+                                                       split="train", transform=transform.train)
+        if seed:
+            self.train_data, self.val_data = random_split(self.train_data,
+                                                               [int(len(self.train_data)*0.9), len(self.train_data) - int(len(self.train_data)*0.9)],
+                                                               generator=torch.Generator().manual_seed(seed))
+
+
+
+        else:
+            self.val_data = torchvision.datasets.ImageNet("datasets/ImageNet", download=True,
+                                                       split="test", transform=transform.test)
+
+        self.test_data = torchvision.datasets.ImageNet("datasets/ImageNet", download=True,
+                                                       split="test", transform=transform.test)
+        self.ssl_data = torchvision.datasets.ImageNet("datasets/ImageNet", download=True,
+                                                       split="train")
+        self.num_classes = 10

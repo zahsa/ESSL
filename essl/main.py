@@ -170,35 +170,33 @@ def GA_mo_cli(pop_size, num_generations,
 
 if __name__ == "__main__":
     import time
-    t1 = time.time()
-    GA(pop_size=3,
-         ssl_epochs=1,
-        dataset="SVHN",
-         num_generations=2,
-         ssl_task = "MoCo",
-         backbone="largerCNN_backbone",
-         exp_dir=r"/home/noah/ESSL/exps/testing/MoCo",
-         use_tensorboard=False,
-         evaluate_downstream_kwargs={"num_epochs":1},
-         crossover="PMX",
-         adaptive_pb="GAGA",
-         eval_method="final test",
-         device="cuda",
-         num_elite=1
-         )
-    print(f"GA TOOK {time.time()-t1} to run")
     # t1 = time.time()
-    # GA_mo(pop_size=2,
-    #    ssl_epochs=1,
-    #    num_generations=3,
-    #    backbone="largerCNN_backbone",
-    #    exp_dir=r"/home/noah/ESSL/exps/testing/merge_essl",
-    #    use_tensorboard=False,
-    #    evaluate_downstream_kwargs={ "num_epochs": 1 },
-    #    crossover="PMX",
-    #    adaptive_pb="GAGA",
-    #    use_test_acc=False,
-    #    device="cuda"
-    #    )
-    # print(f"GA_mo TOOK {time.time() - t1} to run")
+    # GA(pop_size=2,
+    #      ssl_epochs=1,
+    #     dataset="SVHN",
+    #      num_generations=1,
+    #      ssl_task = "MoCo",
+    #      backbone="largerCNN_backbone",
+    #      exp_dir=r"/home/noah/ESSL/exps/testing/save_metrics",
+    #      use_tensorboard=False,
+    #      evaluate_downstream_kwargs={"num_epochs":1},
+    #      crossover="PMX",
+    #      adaptive_pb="GAGA",
+    #      eval_method="final test",
+    #      device="cuda",
+    #      num_elite=1
+    #      )
+    # print(f"GA TOOK {time.time()-t1} to run")
+    t1 = time.time()
+    GA_mo(pop_size=2,
+       ssl_epochs=1,
+       num_generations=1,
+       backbone="largerCNN_backbone",
+       exp_dir=r"/home/noah/ESSL/exps/testing/save_metrics_mo",
+       use_tensorboard=False,
+       evaluate_downstream_kwargs={ "num_epochs": 1 },
+       crossover="PMX",
+       device="cuda"
+       )
+    print(f"GA_mo TOOK {time.time() - t1} to run")
 

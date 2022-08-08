@@ -5,6 +5,7 @@ from tensorboardX import SummaryWriter
 from datetime import datetime
 import os
 import copy
+import time
 
 
 from essl import optimizers
@@ -160,6 +161,8 @@ class finetune:
             model.load_state_dict(max_val_model)
         model.eval()
         total = 0
+        top_2 = 0
+        top_5 = 0
         correct = 0
         running_loss = 0.0
         # deactivate autograd engine
@@ -173,13 +176,19 @@ class finetune:
                 # y_true = torch.cat((y_true, labels), 0)
                 # pred_probs = torch.cat((pred_probs, outputs), 0)
                 _, predicted = outputs.max(1)
+                top2 = torch.topk(outputs, k=2).indices
+                top5 = torch.topk(outputs, k=2).indices
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
+                top_2+= sum([1 if k in j else 0 for j, k in zip(top2, labels)])
+                top_5+= sum([1 if k in j else 0 for j, k in zip(top5, labels)])
+
             test_loss = running_loss / len(testloader)
         test_acc = 100. * correct / total
-
+        top_2 = 100. * top_2 / total
+        top_5 = 100. * top_5 / total
         if report_all_metrics:
-            return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
+            return train_losses, train_accs, val_losses, val_accs, test_acc, top_2, top_5, test_loss
 
         return train_losses, test_acc
 

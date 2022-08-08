@@ -14,6 +14,34 @@ SSL_TASKS = {
                     "NNCLR",
                     "SwaV",
                     "BYOL"
+    ],
+    "v3": [
+                    "NNCLR",
+                    "SwaV",
+                    "BYOL",
+                    "SimSiam",
+                    "BarlowTwins"
+    ],
+    "v4": [
+                    "NNCLR",
+                    "SwaV",
+                    "BYOL",
+                    "SimSiam",
+                    "BarlowTwins",
+                    "MoCo"
+    ],
+    "v5":[
+                    "NNCLR",
+                    "SwaV",
+                    "BYOL",
+                    "SimSiam",
+                    "MoCo"
+    ],
+    "v6":[
+                    "NNCLR",
+                    "SwaV",
+                    "BYOL",
+                    "SimSiam"
     ]
 }
 
