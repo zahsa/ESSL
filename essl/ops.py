@@ -1,10 +1,13 @@
 # FROM https://github.com/DeepVoltaire/AutoAugment/blob/master/ops.py
 from torchvision.transforms import functional as F
 from torchvision.transforms import InterpolationMode
+from torchvision.transforms import RandomHorizontalFlip
 from typing import List, Optional
 import math
 
 DEFAULT_OPS = {
+    "RandomHorizontalFlip":[0.0, 1.0],
+    "RandomVerticalFlip":[0.0, 1.0],
     "ShearX":[0.0, 0.3],
     "ShearY":[0.0, 0.3],
     "TranslateX":[0, int(150 / 331.0 * 32)],
@@ -17,7 +20,10 @@ DEFAULT_OPS = {
     "Sharpness":[0.1, 1.9],
     "Brightness":[0.1, 1.9]
 }
-
+def RandomHorizontalFlip(intensity: float):
+    return lambda img: RandomHorizontalFlip(p=intensity)(img)
+def RandomVerticalFlip(intensity: float):
+    return lambda img: RandomVerticalFlip(p=intensity)(img)
 def ShearX(intensity: float,
            interpolation: InterpolationMode=InterpolationMode.NEAREST,
            fill: Optional[List[float]] = None):
