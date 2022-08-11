@@ -294,7 +294,7 @@ def GA(pop_size, num_generations,
             if m == "pop_vals":
                 ax = sns.boxplot(data=pd.DataFrame(outcomes[m], columns=["gen", "fitness"]), x="gen", y="fitness", color='skyblue')
                 ax.set_xlabel("Generation")
-                ax.set_ylabel("Fitness")
+                ax.set_ylabel("Test Accuracy")
                 plt.savefig(os.path.join(plot_dir, f"{m}.png"))
                 plt.clf()
             elif m == "chromos":
@@ -312,7 +312,7 @@ def GA(pop_size, num_generations,
             plt.fill_between(range(len(outcomes['avg'])), outcomes['min'], outcomes['max'], color='b',
                              alpha=0.2)
             plt.xlabel("Generation")
-            plt.ylabel("Fitness")
+            plt.ylabel("Test Accuracy")
             plt.xticks = (range(len(outcomes['avg'])))
             plt.legend(loc='upper left')
             plt.savefig(os.path.join(plot_dir, f"min_max.png"))
@@ -321,6 +321,7 @@ def GA(pop_size, num_generations,
             # scattered boxplot
             data = pd.DataFrame(outcomes["pop_vals"], columns=["Generation", "Fitness"])
             sns.boxplot(data=data, x="Generation", y="Fitness", color='white')
+            plt.ylabel("Test Accuracy")
             for i, row in data.iterrows():
                 plt.scatter(np.random.normal(row["Generation"], 0.04), row["Fitness"], alpha=0.7, color='skyblue')
             plt.savefig(os.path.join(plot_dir, f"scatter_boxplot.png"))
@@ -674,7 +675,7 @@ def GA_mo(pop_size, num_generations,
             if m == "pop_vals":
                 ax = sns.boxplot(data=pd.DataFrame(outcomes[m], columns=["gen", "fitness"]), x="gen", y="fitness", color='skyblue')
                 ax.set_xlabel("Generation")
-                ax.set_ylabel("Fitness")
+                ax.set_ylabel("Test Accuracy")
                 plt.savefig(os.path.join(plot_dir, f"{m}.png"))
                 plt.clf()
             elif m == "chromos":
@@ -692,7 +693,7 @@ def GA_mo(pop_size, num_generations,
             plt.fill_between(range(len(outcomes['avg'])), outcomes['min'], outcomes['max'], color='b',
                              alpha=0.2)
             plt.xlabel("Generation")
-            plt.ylabel("Fitness")
+            plt.ylabel("Test Accuracy")
             plt.xticks = (range(len(outcomes['avg'])))
             plt.savefig(os.path.join(plot_dir, f"min_max.png"))
             plt.clf()
@@ -700,6 +701,7 @@ def GA_mo(pop_size, num_generations,
             # scattered boxplot
             data = pd.DataFrame(outcomes["pop_vals"], columns=["Generation", "Fitness"])
             sns.boxplot(data=data, x="Generation", y="Fitness", color='white')
+            plt.ylabel("Test Accuracy")
             for i, row in data.iterrows():
                 plt.scatter(np.random.normal(row["Generation"], 0.04), row["Fitness"], alpha=0.7, color='skyblue')
             plt.savefig(os.path.join(plot_dir, f"scatter_boxplot.png"))
