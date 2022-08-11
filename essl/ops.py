@@ -21,9 +21,9 @@ DEFAULT_OPS = {
     "Brightness":[0.1, 1.9]
 }
 def RandomHorizontalFlip(intensity: float):
-    return lambda img: RandomHorizontalFlip(p=intensity)(img)
+    return lambda img: RandomHorizontalFlip(intensity)(img)
 def RandomVerticalFlip(intensity: float):
-    return lambda img: RandomVerticalFlip(p=intensity)(img)
+    return lambda img: RandomVerticalFlip(intensity)(img)
 def ShearX(intensity: float,
            interpolation: InterpolationMode=InterpolationMode.NEAREST,
            fill: Optional[List[float]] = None):
