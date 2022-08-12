@@ -19,6 +19,7 @@ from essl import mutate
 from essl.crossover import PMX, PMX_mo
 from essl.crossover import onepoint_feas, onepoint_feas_mo
 from essl.utils import id_generator
+from essl.ops import DEFAULT_OPS, OPS_NO_FLIP
 
 
 def GA(pop_size, num_generations,
@@ -43,7 +44,8 @@ def GA(pop_size, num_generations,
                              adaptive_pb=None,
                              patience = -1,
                              discrete_intensity=False,
-                             eval_method="final test"
+                             eval_method="final test",
+                             aug_ops="DEFAULT_OPS"
                             ):
 
     # set seeds #
@@ -61,7 +63,12 @@ def GA(pop_size, num_generations,
     toolbox = base.Toolbox()
     creator.create("Fitness", base.Fitness, weights=(100.0,)) # maximize accuracy
     creator.create("Individual", list, fitness=creator.Fitness, id=None)
-    toolbox.register("gen_aug", chromosome_generator(length=chromosome_length,
+    augmentations = {
+        "DEFAULT_OPS": DEFAULT_OPS,
+        "OPS_NO_FLIP":OPS_NO_FLIP
+    }
+    toolbox.register("gen_aug", chromosome_generator(augmentations=augmentations[aug_ops],
+                                                     length=chromosome_length,
                                                      discrete=discrete_intensity
                                                      ))
     toolbox.register("individual", tools.initIterate, creator.Individual,
@@ -355,7 +362,8 @@ def GA_mo(pop_size, num_generations,
                              patience = -1,
                              discrete_intensity=False,
                              eval_method="final test",
-                             ssl_tasks="v1"
+                             ssl_tasks="v1",
+                             aug_ops="DEFAULT_OPS"
                             ):
 
     # set seeds #
@@ -373,7 +381,12 @@ def GA_mo(pop_size, num_generations,
     toolbox = base.Toolbox()
     creator.create("Fitness", base.Fitness, weights=(100.0,)) # maximize accuracy
     creator.create("Individual", list, fitness=creator.Fitness, id=None)
-    toolbox.register("gen_aug", chromosome_generator_mo(length=chromosome_length,
+    augmentations = {
+        "DEFAULT_OPS": DEFAULT_OPS,
+        "OPS_NO_FLIP": OPS_NO_FLIP
+    }
+    toolbox.register("gen_aug", chromosome_generator_mo(augmentations=augmentations[aug_ops],
+                                                     length=chromosome_length,
                                                      discrete=discrete_intensity,
                                                      ssl_tasks=ssl_tasks
                                                      ))

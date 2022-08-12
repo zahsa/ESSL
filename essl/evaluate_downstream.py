@@ -177,6 +177,7 @@ class finetune:
                 correct += predicted.eq(labels).sum().item()
             test_loss = running_loss / len(testloader)
         test_acc = 100. * correct / total
+        # save model #
 
         if report_all_metrics:
             return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss

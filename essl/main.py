@@ -29,6 +29,7 @@ from essl.GA import GA, GA_mo
 @click.option("--patience", default=-1, type=int, help="number of non-improving generations before early stopping")
 @click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
 @click.option("--eval_method", default="final test", type=str, help="[final test, best val test, best val]")
+@click.option("--aug_ops", default="DEFAULT_OPS", type=str, help="[DEFAULT_OPS, OPS_NO_FLIP]")
 def GA_cli(pop_size, num_generations,
                              cxpb,
                              mutpb,
@@ -50,7 +51,8 @@ def GA_cli(pop_size, num_generations,
                              adaptive_pb,
                              patience,
                              discrete_intensity,
-                             eval_method
+                             eval_method,
+                             aug_ops
                              ):
     # save args
     with open(os.path.join(exp_dir, "params.txt"), "w") as f:
@@ -82,7 +84,8 @@ def GA_cli(pop_size, num_generations,
          adaptive_pb=adaptive_pb,
          patience=patience,
          discrete_intensity=discrete_intensity,
-         eval_method=eval_method
+         eval_method=eval_method,
+         aug_ops=aug_ops
          )
 
 
@@ -110,6 +113,7 @@ def GA_cli(pop_size, num_generations,
 @click.option("--patience", default=-1, type=int, help="number of non-improving generations before early stopping")
 @click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
 @click.option("--eval_method", default="final test", type=str, help="[final test, best val test, best val]")
+@click.option("--aug_ops", default="DEFAULT_OPS", type=str, help="[DEFAULT_OPS, OPS_NO_FLIP]")
 def GA_bootstrap_cli(pop_size, num_generations,
                              cxpb,
                              mutpb,
@@ -131,7 +135,8 @@ def GA_bootstrap_cli(pop_size, num_generations,
                              adaptive_pb,
                              patience,
                              discrete_intensity,
-                             eval_method
+                             eval_method,
+                             aug_ops
                              ):
     for seed in random.sample(range(10), num_seeds):
         exp_seed_dir = os.path.join(exp_dir, str(seed))
@@ -168,7 +173,8 @@ def GA_bootstrap_cli(pop_size, num_generations,
              adaptive_pb=adaptive_pb,
              patience=patience,
              discrete_intensity=discrete_intensity,
-             eval_method=eval_method
+             eval_method=eval_method,
+             aug_ops=aug_ops
              )
 
 
@@ -200,6 +206,7 @@ def GA_bootstrap_cli(pop_size, num_generations,
 @click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
 @click.option("--eval_method", default="final test", type=str, help="[final test, best val test, best val]")
 @click.option("--ssl_tasks", default="v1", type=str, help="[v1, v2]")
+@click.option("--aug_ops", default="DEFAULT_OPS", type=str, help="[DEFAULT_OPS, OPS_NO_FLIP]")
 def GA_mo_cli(pop_size, num_generations,
                              cxpb1,
                              mutpb1,
@@ -224,7 +231,8 @@ def GA_mo_cli(pop_size, num_generations,
                              patience,
                              discrete_intensity,
                              eval_method,
-                             ssl_tasks
+                             ssl_tasks,
+                             aug_ops
                              ):
      # save args
      with open(os.path.join(exp_dir, "params.txt"), "w") as f:
@@ -259,7 +267,8 @@ def GA_mo_cli(pop_size, num_generations,
          patience=patience,
          discrete_intensity=discrete_intensity,
          eval_method=eval_method,
-         ssl_tasks=ssl_tasks
+         ssl_tasks=ssl_tasks,
+         aug_ops=aug_ops
          )
 
 @click.command()
@@ -290,6 +299,7 @@ def GA_mo_cli(pop_size, num_generations,
 @click.option("--discrete_intensity", default=False, type=bool, help="whether or not to use discrete intensity vals")
 @click.option("--eval_method", default="final test", type=str, help="[final test, best val test, best val]")
 @click.option("--ssl_tasks", default="v1", type=str, help="[v1, v2]")
+@click.option("--aug_ops", default="DEFAULT_OPS", type=str, help="[DEFAULT_OPS, OPS_NO_FLIP]")
 def GA_mo_bootstrap_cli(pop_size, num_generations,
                              cxpb1,
                              mutpb1,
@@ -314,7 +324,8 @@ def GA_mo_bootstrap_cli(pop_size, num_generations,
                              patience,
                              discrete_intensity,
                              eval_method,
-                             ssl_tasks
+                             ssl_tasks,
+                             aug_ops
                              ):
     for seed in random.sample(range(10), num_seeds):
         exp_seed_dir = os.path.join(exp_dir, str(seed))
@@ -354,7 +365,8 @@ def GA_mo_bootstrap_cli(pop_size, num_generations,
          patience=patience,
          discrete_intensity=discrete_intensity,
          eval_method=eval_method,
-         ssl_tasks=ssl_tasks
+         ssl_tasks=ssl_tasks,
+         aug_ops=aug_ops
          )
 
 if __name__ == "__main__":
@@ -377,15 +389,16 @@ if __name__ == "__main__":
     #      )
     # print(f"GA TOOK {time.time()-t1} to run")
     t1 = time.time()
-    GA_mo(pop_size=2,
+    GA(pop_size=2,
        ssl_epochs=1,
-       num_generations=5,
+       num_generations=1,
        backbone="largerCNN_backbone",
-       exp_dir=r"/home/noah/ESSL/exps/testing/save_metrics_mo",
+       exp_dir=r"/home/noah/ESSL/exps/testing/no_flip_ops",
        use_tensorboard=False,
        evaluate_downstream_kwargs={ "num_epochs": 1 },
        crossover="PMX",
-       device="cuda"
+       device="cuda",
+       aug_ops="OPS_NO_FLIP"
        )
     print(f"GA_mo TOOK {time.time() - t1} to run")
 
