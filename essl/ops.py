@@ -1,7 +1,7 @@
 # FROM https://github.com/DeepVoltaire/AutoAugment/blob/master/ops.py
 from torchvision.transforms import functional as F
 from torchvision.transforms import InterpolationMode
-from torchvision.transforms import RandomHorizontalFlip
+from torchvision.transforms import RandomHorizontalFlip, RandomVerticalFlip
 from typing import List, Optional
 import math
 
