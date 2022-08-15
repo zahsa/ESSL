@@ -395,7 +395,8 @@ if __name__ == "__main__":
        backbone="largerCNN_backbone",
        exp_dir=r"/home/noah/ESSL/exps/testing/no_flip_ops",
        use_tensorboard=False,
-       evaluate_downstream_kwargs={ "num_epochs": 1 },
+       evaluate_downstream_kwargs={ "num_epochs": 1,
+                                    "save_best_model_path": "/home/noah/ESSL/exps/testing/no_flip_ops/model.pt"},
        crossover="PMX",
        device="cuda",
        aug_ops="OPS_NO_FLIP"

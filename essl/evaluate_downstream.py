@@ -42,8 +42,10 @@ class finetune:
                     device: str = "cuda",
                     verbose: bool = False,
                     tensorboard_dir: str = None,
+                    save_best_model_path: str = None,
                     use_scheduler: bool = False,
-                    seed: int = 10):
+                    seed: int = 10,
+                    ):
         self.dataset = dataset
         self.opt = optimizers.__dict__[opt]
         self.num_epochs = num_epochs
@@ -52,7 +54,7 @@ class finetune:
         self.device = device
         self.verbose = verbose
         self.seed = seed
-
+        self.save_best_model_path = save_best_model_path
 
         if tensorboard_dir:
             if not os.path.isdir(tensorboard_dir):
@@ -64,7 +66,7 @@ class finetune:
     def __call__(self, backbone: torch.nn.Module,
                  device=None,
                  report_all_metrics: bool=False,
-                 eval_method: str="final test"):
+                 eval_method: str="best val test"):
         torch.manual_seed(self.seed)
         model = finetune_model(backbone.backbone, backbone.in_features, self.dataset.num_classes).to(self.device)
         trainloader = torch.utils.data.DataLoader(self.dataset.train_data,
@@ -178,7 +180,9 @@ class finetune:
             test_loss = running_loss / len(testloader)
         test_acc = 100. * correct / total
         # save model #
-
+        if self.save_best_model_path:
+            print(f"saving model to {self.save_best_model_path}")
+            torch.save(model.state_dict(), self.save_best_model_path)
         if report_all_metrics:
             return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
 

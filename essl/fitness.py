@@ -293,9 +293,10 @@ if __name__ == "__main__":
                                  ssl_epochs=1,
                                  ssl_batch_size=64,
                                  evaluate_downstream_method="finetune",
-                                 evaluate_downstream_kwargs={"num_epochs":4},
+                                 evaluate_downstream_kwargs={"num_epochs":4,
+                                                             "save_best_model_path": "/home/noah/ESSL/exps/testing/no_flip_ops/model.pt"},
                                  device="cuda",
-                                 eval_method="final test")
+                                 eval_method="best val test")
     bb1, model1 = fitness(cc, return_losses=True)
     bb2, model2 = fitness(cc, return_losses=True)
 
