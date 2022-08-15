@@ -6,6 +6,7 @@ num_seeds = 3
 pop_size = 15
 num_generations = 10
 cxpb1 = 0.8
+cxpb2 = 0.5
 mutpb1 = 0.8
 mutpb2 = 0.5
 mutpb2 = 0.2
