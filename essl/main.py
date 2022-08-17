@@ -389,13 +389,12 @@ if __name__ == "__main__":
     # print(f"GA TOOK {time.time()-t1} to run")
     t1 = time.time()
     GA(pop_size=2,
-       ssl_epochs=1,
+       ssl_epochs=2,
        num_generations=1,
        backbone="largerCNN_backbone",
-       exp_dir=r"/home/noah/ESSL/exps/testing/no_flip_ops",
+       exp_dir=r"/home/noah/ESSL/exps/testing/save_best_model",
        use_tensorboard=False,
-       evaluate_downstream_kwargs={ "num_epochs": 1,
-                                    "save_best_model_path": "/home/noah/ESSL/exps/testing/no_flip_ops/model.pt"},
+       evaluate_downstream_kwargs={ "num_epochs": 1},
        crossover="PMX",
        device="cuda",
        aug_ops="OPS_NO_FLIP"

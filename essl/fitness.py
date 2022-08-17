@@ -1,8 +1,9 @@
+import os
 import numpy as np
 import torchvision
 import torch
 from lightly.data import LightlyDataset
-
+import glob
 
 from essl import ops
 from essl import chromosome
@@ -67,6 +68,7 @@ class fitness_function:
     """
     def __init__(self,
                  dataset: str,
+                 exp_dir: str,
                  backbone: str,
                  ssl_task: str,
                  ssl_epochs: int,
@@ -84,6 +86,10 @@ class fitness_function:
         # torch.manual_seed(self.seed)
 
         self.dataset = datasets.__dict__[dataset](seed=seed)
+        self.exp_dir = exp_dir
+        self.model_dir = os.path.join(self.exp_dir, "models")
+        if not os.path.isdir(self.model_dir):
+            os.mkdir(self.model_dir)
         self.backbone = backbone
         self.ssl_epochs = ssl_epochs
         self.ssl_batch_size = ssl_batch_size
@@ -105,6 +111,11 @@ class fitness_function:
                                                                                                  seed=self.seed,
                                                                                                  device=self.device,
                                                                                                  **self.evaluate_downstream_kwargs)
+
+        self.best_chromo_info = {
+            "id":0,
+            "fitness":-1
+        }
 
     @staticmethod
     def gen_augmentation_torch(chromosome: list) -> torchvision.transforms.Compose:
@@ -149,6 +160,11 @@ class fitness_function:
 
             else:
                 return max(val_accs),
+    def clear_models(self):
+        opt_model = os.path.join(self.model_dir, str(self.best_chromo_info["id"]) + ".pt")
+        for f in glob.glob(os.path.join(self.model_dir, "*.pt")):
+            if f != opt_model:
+                os.remove(f)
 
     def __call__(self, chromosome,
                  device=None,
@@ -162,7 +178,8 @@ class fitness_function:
         representation, ssl_losses = self.ssl_task(transform,
                                                    device=device
                                                    )
-        # return all metrics by default
+        # set save path for model
+        self.evaluate_downstream.save_best_model_path = os.path.join(self.model_dir, str(chromosome.id))+".pt"
         train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
                                                                                                        # device=device,
                                                                                                        report_all_metrics=True,
@@ -179,9 +196,17 @@ class fitness_function:
                 pass
             # default no return losses,
             if self.eval_method in ["best val test", "final test"]:
+                if test_acc > self.best_chromo_info["fitness"]:
+                    self.best_chromo_info["id"] = chromosome.id
+                    self.best_chromo_info["fitness"] = test_acc
+                    self.clear_models()
                 return test_acc,
 
             else:
+                if max(val_accs) > self.best_chromo_info["fitness"]:
+                    self.best_chromo_info["id"] = chromosome.id
+                    self.best_chromo_info["fitness"] = max(val_accs)
+                    self.clear_models()
                 return max(val_accs),
 
 class fitness_function_mo:
