@@ -291,7 +291,6 @@ def GA_mo_cli(pop_size, num_generations,
 @click.option("--save_plots", default=True, type=bool, help="whether to save plots or not")
 @click.option("--chromosome_length", default=5, type=int, help="number of genes in chromosome")
 @click.option("--num_seeds", default=3, type=int, help="random seed for experiment control")
-
 @click.option("--num_elite", default=0, type=int, help="number of elite chromosomes")
 @click.option("--adaptive_pb1", default=None, type=str, help="halving, generational, AGA")
 @click.option("--adaptive_pb2", default=None, type=str, help="halving, generational, AGA")
@@ -317,7 +316,7 @@ def GA_mo_bootstrap_cli(pop_size, num_generations,
                              use_tensorboard,
                              save_plots,
                              chromosome_length,
-                             seed,
+                             num_seeds,
                              num_elite,
                              adaptive_pb1,
                              adaptive_pb2,
