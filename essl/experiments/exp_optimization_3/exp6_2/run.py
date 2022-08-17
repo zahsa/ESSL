@@ -3,7 +3,7 @@ import datetime
 import os
 from essl.GA import GA, GA_mo
 
-num_seeds = 3
+num_seeds = 10
 pop_size = 15
 num_generations = 10
 cxpb = 0.8
