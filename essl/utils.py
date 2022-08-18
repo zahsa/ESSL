@@ -72,3 +72,16 @@ def compare_dicts(model_1, model_2):
         print('Models match perfectly! :)')
 
 
+def automate_cc_exp_creation(target_dir, shell_script_path):
+    """
+    takes shell script and creates a python script, slurm file and run file
+    :param target_dir:
+    :param shell_script_path:
+    :return:
+    """
+    # gen run.sh
+    # gen slurm file
+    # gen python script
+
+
+
