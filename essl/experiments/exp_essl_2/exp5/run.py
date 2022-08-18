@@ -3,7 +3,7 @@ import os
 from essl.GA import GA, GA_mo
 import datetime
 
-num_seeds = 3
+num_seeds = 5
 pop_size = 15
 num_generations = 10
 cxpb1 = 0.8
@@ -15,7 +15,7 @@ selection = "roulette"
 dataset = "Cifar10"
 backbone = "largerCNN_backbone"
 ssl_epochs = 10
-ssl_batch_size = 32
+ssl_batch_size = 256
 evaluate_downstream_method = "finetune"
 device = "cuda"
 exp_dir = "./"
@@ -28,7 +28,7 @@ patience = -1
 discrete_intensity = False
 eval_method = "best val test"
 ssl_tasks = "v6"
-
+aug_ops = "OPS_NO_FLIP"
 args = {'num_seeds':num_seeds,
     'pop_size':pop_size,
     'num_generations':num_generations,
@@ -53,7 +53,8 @@ args = {'num_seeds':num_seeds,
     'patience':patience,
     'discrete_intensity':discrete_intensity,
     'eval_method':eval_method,
-    'ssl_tasks':ssl_tasks}
+    'ssl_tasks':ssl_tasks,
+    'aug_ops':aug_ops}
 
 if __name__ == "__main__":
     for seed in random.sample(range(10), num_seeds):

@@ -4,7 +4,7 @@ import datetime
 from essl.GA import GA, GA_mo
 
 
-num_seeds = 10
+num_seeds = 5
 pop_size = 15
 num_generations = 10
 cxpb = 0.8
@@ -13,7 +13,7 @@ crossover = "PMX"
 selection = "roulette"
 dataset = "Cifar10"
 backbone = "largerCNN_backbone"
-ssl_task = "SimSiam"
+ssl_task = "NNCLR"
 ssl_epochs = 10
 ssl_batch_size = 256
 evaluate_downstream_method = "finetune"
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         with open(os.path.join(exp_seed_dir, "params.txt"), "w") as f:
             f.write(f"date: {datetime.datetime.now()}\n")
             for a1, a2 in args.items():
-                f.write("--"+a1 + " " + a2 + "\n")
+                f.write("--"+a1 + " " + str(a2) + "\n")
 
         # save environment
         os.system(f"pip freeze > {os.path.join(exp_seed_dir, 'env.txt')}")

@@ -60,7 +60,7 @@ if __name__ == "__main__":
         with open(os.path.join(exp_seed_dir, "params.txt"), "w") as f:
             f.write(f"date: {datetime.datetime.now()}\n")
             for a1, a2 in args.items():
-                f.write("--" + a1 + " " + a2 + "\n")
+                f.write("--"+a1 + " " + str(a2) + "\n")
 
         # save environment
         os.system(f"pip freeze > {os.path.join(exp_seed_dir, 'env.txt')}")

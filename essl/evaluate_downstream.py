@@ -184,7 +184,7 @@ class finetune:
             print(f"saving model to {self.save_best_model_path}")
             torch.save(model.state_dict(), self.save_best_model_path)
         if report_all_metrics:
-            return train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
+            return model, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
 
         return train_losses, test_acc
 

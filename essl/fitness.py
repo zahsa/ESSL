@@ -165,6 +165,9 @@ class fitness_function:
         for f in glob.glob(os.path.join(self.model_dir, "*.pt")):
             if f != opt_model:
                 os.remove(f)
+    def save_best_model(self, model_path):
+        print(f"saving model to {model_path}")
+        torch.save(self.best_chromo_info["model"], model_path)
 
     def __call__(self, chromosome,
                  device=None,
@@ -179,8 +182,8 @@ class fitness_function:
                                                    device=device
                                                    )
         # set save path for model
-        self.evaluate_downstream.save_best_model_path = os.path.join(self.model_dir, str(chromosome.id))+".pt"
-        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
+        # self.evaluate_downstream.save_best_model_path = os.path.join(self.model_dir, str(chromosome.id))+".pt"
+        model, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
                                                                                                        # device=device,
                                                                                                        report_all_metrics=True,
                                                                                                        eval_method=self.eval_method)
@@ -199,14 +202,17 @@ class fitness_function:
                 if test_acc > self.best_chromo_info["fitness"]:
                     self.best_chromo_info["id"] = chromosome.id
                     self.best_chromo_info["fitness"] = test_acc
-                self.clear_models()
+                    self.best_chromo_info["model"] = model.state_dict()
+                    self.clear_models()
+                    self.save_best_model(model_path=os.path.join(self.model_dir, str(chromosome.id))+".pt")
                 return test_acc,
 
             else:
                 if max(val_accs) > self.best_chromo_info["fitness"]:
                     self.best_chromo_info["id"] = chromosome.id
                     self.best_chromo_info["fitness"] = max(val_accs)
-                self.clear_models()
+                    self.clear_models()
+                    self.save_best_model(model_path=os.path.join(self.model_dir, str(chromosome.id))+".pt")
                 return max(val_accs),
 
 class fitness_function_mo:
