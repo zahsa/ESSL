@@ -71,5 +71,4 @@ def compare_dicts(model_1, model_2):
     if models_differ == 0:
         print('Models match perfectly! :)')
 
-def gen_dataset_from_bootstrap(exp_dir):
 
