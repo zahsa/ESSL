@@ -83,7 +83,7 @@ if __name__ == "__main__":
             evaluate_downstream_method=evaluate_downstream_method,
             evaluate_downstream_kwargs=evaluate_downstream_kwargs,
             device=device,
-            exp_dir=exp_dir,
+            exp_dir=exp_seed_dir,
             use_tensorboard=use_tensorboard,
             save_plots=save_plots,
             chromosome_length=chromosome_length,
