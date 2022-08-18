@@ -199,14 +199,14 @@ class fitness_function:
                 if test_acc > self.best_chromo_info["fitness"]:
                     self.best_chromo_info["id"] = chromosome.id
                     self.best_chromo_info["fitness"] = test_acc
-                    self.clear_models()
+                self.clear_models()
                 return test_acc,
 
             else:
                 if max(val_accs) > self.best_chromo_info["fitness"]:
                     self.best_chromo_info["id"] = chromosome.id
                     self.best_chromo_info["fitness"] = max(val_accs)
-                    self.clear_models()
+                self.clear_models()
                 return max(val_accs),
 
 class fitness_function_mo:
