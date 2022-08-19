@@ -9,7 +9,7 @@ from essl.GA import GA, GA_mo
 
 args = {
     {% for param in params -%}
-        {{ param[0] }}:{{ param[1] }},
+        {{ "'" + param[0] + "'" }}:{{ param[1] }},
     {% endfor %}
     }
 
