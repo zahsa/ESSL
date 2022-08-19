@@ -13,4 +13,4 @@ if __name__ == "__main__":
         seed_directories = [d for d in glob.glob(os.path.join(e, "*/")) if "tensorboard" not in d and "datasets" not in d]
         for dir in seed_directories:
             new_dir = os.path.join(args.targ_dir, dir.split(args.exp_dir)[1][1:])
-            shutil.move(dir, new_dir)
+            shutil.copy(dir, new_dir)
