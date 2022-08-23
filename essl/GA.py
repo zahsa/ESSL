@@ -395,6 +395,7 @@ def GA_mo(pop_size, num_generations,
                      toolbox.gen_aug)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     eval = fitness.fitness_function_mo(dataset=dataset,
+                                       exp_dir=exp_dir,
                                      backbone=backbone,
                                      ssl_epochs=ssl_epochs,
                                      ssl_batch_size=ssl_batch_size,

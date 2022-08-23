@@ -225,6 +225,7 @@ class fitness_function_mo:
     # D1: remove ssl task as option from fitness function
     def __init__(self,
                  dataset: str,
+                 exp_dir: str,
                  backbone: str,
                  ssl_epochs: int,
                  ssl_batch_size: int,
@@ -241,6 +242,10 @@ class fitness_function_mo:
         # torch.manual_seed(self.seed)
 
         self.dataset = datasets.__dict__[dataset](seed=seed)
+        self.exp_dir = exp_dir
+        self.model_dir = os.path.join(self.exp_dir, "models")
+        if not os.path.isdir(self.model_dir):
+            os.mkdir(self.model_dir)
         self.backbone = backbone
         self.ssl_epochs = ssl_epochs
         self.ssl_batch_size = ssl_batch_size
@@ -255,7 +260,18 @@ class fitness_function_mo:
             seed=self.seed,
             device=self.device,
             **self.evaluate_downstream_kwargs)
-
+        self.best_chromo_info = {
+            "id": 0,
+            "fitness": -1
+        }
+    def clear_models(self):
+        opt_model = os.path.join(self.model_dir, str(self.best_chromo_info["id"]) + ".pt")
+        for f in glob.glob(os.path.join(self.model_dir, "*.pt")):
+            if f != opt_model:
+                os.remove(f)
+    def save_best_model(self, model_path):
+        print(f"saving model to {model_path}")
+        torch.save(self.best_chromo_info["model"], model_path)
     @staticmethod
     def gen_augmentation_torch(chromosome: list) -> torchvision.transforms.Compose:
         # gen augmentation
@@ -286,7 +302,7 @@ class fitness_function_mo:
         representation, ssl_losses = ssl_task(transform,
                                               device=device
                                               )
-        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(
+        model, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(
                                                                         representation,
                                                                         eval_method=self.eval_method,
                                                                         report_all_metrics=True)
@@ -302,6 +318,12 @@ class fitness_function_mo:
                 pass
             # default no return losses,
             if self.eval_method in ["best val test", "final test"]:
+                if test_acc > self.best_chromo_info["fitness"]:
+                    self.best_chromo_info["id"] = chromosome.id
+                    self.best_chromo_info["fitness"] = test_acc
+                    self.best_chromo_info["model"] = model.state_dict()
+                    self.clear_models()
+                    self.save_best_model(model_path=os.path.join(self.model_dir, str(chromosome.id)) + ".pt")
                 return test_acc,
 
             else:

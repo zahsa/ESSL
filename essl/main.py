@@ -371,7 +371,7 @@ def GA_mo_bootstrap_cli(pop_size, num_generations,
 if __name__ == "__main__":
     import time
     t1 = time.time()
-    GA(pop_size=2,
+    GA_mo(pop_size=2,
        ssl_epochs=2,
        num_generations=1,
        backbone="largerCNN_backbone",
