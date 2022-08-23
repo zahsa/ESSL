@@ -2,7 +2,7 @@ import torchvision
 import PIL
 import pandas as pd
 import os
-
+import torch
 from essl import chromosome
 
 def gen_augmentation_PIL(chromosome: list) -> torchvision.transforms.Compose:
@@ -40,3 +40,48 @@ def id_generator() -> int:
     while True:
         id += 1
         yield id
+
+def compare_models(model_1, model_2):
+    models_differ = 0
+    for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):
+        if torch.equal(key_item_1[1], key_item_2[1]):
+            pass
+        else:
+            models_differ += 1
+            if (key_item_1[0] == key_item_2[0]):
+                print('Mismtach found at', key_item_1[0])
+            else:
+                raise Exception
+    if models_differ == 0:
+        print('Models match perfectly! :)')
+    else:
+        print('different models')
+
+def compare_dicts(model_1, model_2):
+    models_differ = 0
+    for key_item_1, key_item_2 in zip(model_1.items(), model_2.items()):
+        if torch.equal(key_item_1[1], key_item_2[1]):
+            pass
+        else:
+            models_differ += 1
+            if (key_item_1[0] == key_item_2[0]):
+                print('Mismtach found at', key_item_1[0])
+            else:
+                raise Exception
+    if models_differ == 0:
+        print('Models match perfectly! :)')
+
+
+def automate_cc_exp_creation(target_dir, shell_script_path):
+    """
+    takes shell script and creates a python script, slurm file and run file
+    :param target_dir:
+    :param shell_script_path:
+    :return:
+    """
+    # gen run.sh
+    # gen slurm file
+    # gen python script
+
+
+

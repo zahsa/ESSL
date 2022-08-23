@@ -9,6 +9,9 @@ try:
 except ImportError:
     from collections import Sequence
 
+
+
+
 def mutGaussian(individual, indpb=0.05, discrete=False, intensity_increments=10):
     """
     DIrectly modified from source code to work with our chromosomes
@@ -70,7 +73,10 @@ def mutGaussian(individual, indpb=0.05, discrete=False, intensity_increments=10)
                 individual[i][1] = update
     return individual,
 
-
+def mutGaussian_mo(individual, indpb=0.05, discrete=False, intensity_increments=10):
+    ind = mutGaussian(individual[1:], indpb, discrete, intensity_increments)[0]
+    individual[1:] = ind
+    return individual,
 
 def mutGaussianChoice(individual, discrete=False, intensity_increments=10):
     """
@@ -117,12 +123,14 @@ def mutGaussianChoice(individual, discrete=False, intensity_increments=10):
 
     return individual,
 
-
-
+def mutGaussianChoice_mo(individual, discrete=False, intensity_increments=10):
+    ind = mutGaussianChoice(individual[1:], discrete, intensity_increments)[0]
+    individual[1:] = ind
+    return individual,
 
 if __name__ == "__main__":
-    from essl.chromosome import chromosome_generator
-    cc = chromosome_generator()
+    from essl.chromosome import chromosome_generator_mo
+    cc = chromosome_generator_mo()
     chromo = cc()
     for _ in range(10):
-        print(mutGaussianChoice(chromo, discrete=False))
+        print(mutGaussianChoice_mo(chromo, discrete=True))

@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 import copy
-from lightly.data import SimCLRCollateFunction, BaseCollateFunction, MultiCropCollateFunction
+from lightly.data import SimCLRCollateFunction, BaseCollateFunction, MultiCropCollateFunction, SwaVCollateFunction
 from lightly.loss import NTXentLoss
 from lightly.models.modules import SimCLRProjectionHead
 from lightly.loss import SwaVLoss
@@ -14,6 +14,16 @@ from lightly.models.utils import update_momentum
 from lightly.models.modules import NNCLRProjectionHead
 from lightly.models.modules import NNCLRPredictionHead
 from lightly.models.modules import NNMemoryBankModule
+
+from lightly.data import ImageCollateFunction
+from lightly.models.modules import BarlowTwinsProjectionHead
+from lightly.loss import BarlowTwinsLoss
+from lightly.models.modules import SimSiamProjectionHead
+from lightly.models.modules import SimSiamPredictionHead
+
+from lightly.data import MoCoCollateFunction
+from lightly.models.modules import MoCoProjectionHead
+
 
 class SimCLR(nn.Module):
     def __init__(self, backbone, seed=10):
@@ -30,9 +40,15 @@ class SimCLR(nn.Module):
 
 
 
-    def fit(self, transform, dataset, batch_size, num_epochs, device="cuda"):
+    def fit(self, dataset, batch_size, num_epochs, transform=None,  device="cuda"):
         self.to(device)
-        collate_fn = BaseCollateFunction(transform)
+        if transform:
+            collate_fn = BaseCollateFunction(transform)
+        else:
+            collate_fn = SimCLRCollateFunction(
+                         input_size = 32,
+                         gaussian_blur = 0.,
+            )
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,
@@ -90,16 +106,18 @@ class SwaV(nn.Module):
         p = self.prototypes(x)
         return p
 
-    def fit(self, transform, dataset, batch_size, num_epochs, device="cuda"):
+    def fit(self, dataset, batch_size, num_epochs, transform=None,  device="cuda"):
         self.to(device)
         # employ multi crop collate to custom transform
         # cropping hparams taken directly from Swav collate
-        collate_fn = MultiCropCollateFunction( crop_sizes = [24, 8],
-                                               crop_counts = [2, 4],
-                                               crop_min_scales = [0.14, 0.05],
-                                               crop_max_scales = [1.0, 0.14],
-                                               transforms=transform)
-
+        if transform:
+            collate_fn = MultiCropCollateFunction( crop_sizes = [24, 8],
+                                                   crop_counts = [2, 4],
+                                                   crop_min_scales = [0.14, 0.05],
+                                                   crop_max_scales = [1.0, 0.14],
+                                                   transforms=transform)
+        else:
+            collate_fn = SwaVCollateFunction()
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,
@@ -133,11 +151,49 @@ class SwaV(nn.Module):
 class BarlowTwins(nn.Module):
     def __init__(self, backbone):
         super().__init__()
-        self.backbone = backbone
-        self.projection_head = BarlowTwinsProjectionHead(in_features, 2048, 2048)
+        self.backbone = backbone.backbone
+        self.in_features = backbone.in_features
+        self.projection_head = BarlowTwinsProjectionHead(self.in_features, 2048, 2048)
 
-    def fit(self, transform, dataset, batch_size, num_epochs, device="cuda"):
-        raise NotImplementedError
+    def fit(self, dataset, batch_size, num_epochs, transform=None,  device="cuda"):
+
+        self.to(device)
+        # employ multi crop collate to custom transform
+        # cropping hparams taken directly from Swav collate
+        if transform:
+            collate_fn = BaseCollateFunction(transform)
+        else:
+            collate_fn = ImageCollateFunction(input_size=32)
+
+        dataloader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=batch_size,
+            collate_fn=collate_fn,
+            shuffle=True,
+            drop_last=True,
+            num_workers=12,
+        )
+
+
+        criterion = BarlowTwinsLoss()
+        optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
+
+        losses = []
+        for epoch in range(num_epochs):
+            total_loss = 0
+            for (x0, x1), _, _ in dataloader:
+                x0 = x0.to(device)
+                x1 = x1.to(device)
+                z0 = self.forward(x0)
+                z1 = self.forward(x1)
+                loss = criterion(z0, z1)
+                total_loss += loss.detach()
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+            avg_loss = total_loss / len(dataloader)
+            losses.append(float(avg_loss))
+        return losses
 
     def forward(self, x):
         x = self.backbone(x).flatten(start_dim=1)
@@ -172,9 +228,12 @@ class BYOL(nn.Module):
         z = z.detach()
         return z
 
-    def fit(self, transform, dataset, batch_size, num_epochs, device="cuda"):
+    def fit(self, dataset, batch_size, num_epochs, transform=None,  device="cuda"):
         self.to(device)
-        collate_fn = BaseCollateFunction(transform)
+        if transform:
+            collate_fn = BaseCollateFunction(transform)
+        else:
+            collate_fn = SimCLRCollateFunction(input_size=32)
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,
@@ -210,8 +269,9 @@ class MoCo(nn.Module):
     def __init__(self, backbone):
         super().__init__()
 
-        self.backbone = backbone
-        self.projection_head = MoCoProjectionHead(in_features, 512, 128)
+        self.backbone = backbone.backbone
+        self.in_features = backbone.in_features
+        self.projection_head = MoCoProjectionHead(self.in_features, 512, 128)
 
         self.backbone_momentum = copy.deepcopy(self.backbone)
         self.projection_head_momentum = copy.deepcopy(self.projection_head)
@@ -219,8 +279,43 @@ class MoCo(nn.Module):
         deactivate_requires_grad(self.backbone_momentum)
         deactivate_requires_grad(self.projection_head_momentum)
 
-    def fit(self, transform, dataset, batch_size, num_epochs, device="cuda"):
-        raise NotImplementedError
+    def fit(self, dataset, batch_size, num_epochs,transform=None,  device="cuda"):
+        self.to(device)
+        if transform:
+            collate_fn = BaseCollateFunction(transform)
+        else:
+            collate_fn = MoCoCollateFunction(input_size=32)
+
+        dataloader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=batch_size,
+            collate_fn=collate_fn,
+            shuffle=True,
+            drop_last=True,
+            num_workers=12,
+        )
+
+        criterion = NTXentLoss(memory_bank_size=4096)
+        optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
+
+        losses = []
+        for epoch in range(num_epochs):
+            total_loss = 0
+            for (x_query, x_key), _, _ in dataloader:
+                update_momentum(self.backbone, self.backbone_momentum, m=0.99)
+                update_momentum(self.projection_head, self.projection_head_momentum, m=0.99)
+                x_query = x_query.to(device)
+                x_key = x_key.to(device)
+                query = self.forward(x_query)
+                key = self.forward_momentum(x_key)
+                loss = criterion(query, key)
+                total_loss += loss.detach()
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+            avg_loss = total_loss / len(dataloader)
+            losses.append(avg_loss)
+        return losses
 
     def forward(self, x):
         query = self.backbone(x).flatten(start_dim=1)
@@ -241,11 +336,14 @@ class NNCLR(nn.Module):
         self.projection_head = NNCLRProjectionHead(self.in_features, 512, 128)
         self.prediction_head = NNCLRPredictionHead(128, 512, 128)
 
-    def fit(self, transform, dataset, batch_size, num_epochs, device="cuda"):
+    def fit(self, dataset, batch_size, num_epochs, transform=None, device="cuda"):
         self.to(device)
         memory_bank = NNMemoryBankModule(size=4096)
         memory_bank.to(device)
-        collate_fn = BaseCollateFunction(transform)
+        if transform:
+            collate_fn = BaseCollateFunction(transform)
+        else:
+            collate_fn = SimCLRCollateFunction(input_size=32)
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,
@@ -287,12 +385,48 @@ class NNCLR(nn.Module):
 class SimSiam(nn.Module):
     def __init__(self, backbone):
         super().__init__()
-        self.backbone = backbone
-        self.projection_head = SimSiamProjectionHead(in_features, 512, 128)
+        self.backbone = backbone.backbone
+        self.in_features = backbone.in_features
+        self.projection_head = SimSiamProjectionHead(self.in_features, 512, 128)
         self.prediction_head = SimSiamPredictionHead(128, 64, 128)
 
-    def fit(self, transform, dataset, batch_size, num_epochs, device="cuda"):
-        raise NotImplementedError
+    def fit(self, dataset, batch_size, num_epochs,transform=None,  device="cuda"):
+        self.to(device)
+        if transform:
+            collate_fn = BaseCollateFunction(transform)
+        else:
+            collate_fn = SimCLRCollateFunction(
+                input_size=32,
+                gaussian_blur=0.,
+            )
+
+        dataloader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=batch_size,
+            collate_fn=collate_fn,
+            shuffle=True,
+            drop_last=True,
+            num_workers=12,
+        )
+
+        criterion = NegativeCosineSimilarity()
+        optimizer = torch.optim.SGD(self.parameters(), lr=0.06)
+        losses = []
+        for epoch in range(num_epochs):
+            total_loss = 0
+            for (x0, x1), _, _ in dataloader:
+                x0 = x0.to(device)
+                x1 = x1.to(device)
+                z0, p0 = self.forward(x0)
+                z1, p1 = self.forward(x1)
+                loss = 0.5 * (criterion(z0, p1) + criterion(z1, p0))
+                total_loss += loss.detach()
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+            avg_loss = total_loss / len(dataloader)
+            losses.append(float(avg_loss))
+        return losses
 
     def forward(self, x):
         f = self.backbone(x).flatten(start_dim=1)

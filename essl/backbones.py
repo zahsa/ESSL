@@ -17,9 +17,9 @@ class ResNet18_backbone(nn.Module):
 class largerCNN_backbone(nn.Module):
     def __init__(self, seed = 10):
         super().__init__()
-        torch.cuda.manual_seed_all(seed)
-        torch.cuda.manual_seed(seed)
-        torch.manual_seed(seed)
+        # torch.cuda.manual_seed_all(seed)
+        # torch.cuda.manual_seed(seed)
+        # torch.manual_seed(seed)
         self.backbone = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=3, padding=1),
             nn.ReLU(),

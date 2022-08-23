@@ -1,10 +1,10 @@
 # FROM https://github.com/DeepVoltaire/AutoAugment/blob/master/ops.py
 from torchvision.transforms import functional as F
 from torchvision.transforms import InterpolationMode
+from torchvision.transforms import RandomHorizontalFlip, RandomVerticalFlip
 from typing import List, Optional
 import math
-
-DEFAULT_OPS = {
+OPS_NO_FLIP = {
     "ShearX":[0.0, 0.3],
     "ShearY":[0.0, 0.3],
     "TranslateX":[0, int(150 / 331.0 * 32)],
@@ -17,7 +17,25 @@ DEFAULT_OPS = {
     "Sharpness":[0.1, 1.9],
     "Brightness":[0.1, 1.9]
 }
-
+DEFAULT_OPS = {
+    "HorizontalFlip":[0.0, 1.0],
+    "VerticalFlip":[0.0, 1.0],
+    "ShearX":[0.0, 0.3],
+    "ShearY":[0.0, 0.3],
+    "TranslateX":[0, int(150 / 331.0 * 32)],
+    "TranslateY":[0, int(150 / 331.0 * 32)],
+    "Rotate":[-30, 30],
+    "Color":[0.1, 1.9],
+    # "Posterize":[4, 8],
+    "Solarize":[0.0, 1.0],
+    "Contrast":[0.1,1.9],
+    "Sharpness":[0.1, 1.9],
+    "Brightness":[0.1, 1.9]
+}
+def HorizontalFlip(intensity: float):
+    return lambda img: RandomHorizontalFlip(intensity)(img)
+def VerticalFlip(intensity: float):
+    return lambda img: RandomVerticalFlip(intensity)(img)
 def ShearX(intensity: float,
            interpolation: InterpolationMode=InterpolationMode.NEAREST,
            fill: Optional[List[float]] = None):
@@ -109,116 +127,3 @@ def Invert():
 def Identity():
     return lambda img: img
 
-
-
-
-
-
-
-# class ShearX(object):
-#     def __init__(self, fillcolor=(128, 128, 128)):
-#         self.fillcolor = fillcolor
-#         self.range = [-0.3, 0.3]
-#
-#     def __call__(self, x, magnitude):
-#         return x.transform(
-#             x.size, Image.AFFINE, (1, magnitude * random.choice([-1, 1]), 0, 0, 1, 0),
-#             Image.BICUBIC, fillcolor=self.fillcolor)
-#
-#
-# class ShearY(object):
-#     def __init__(self, fillcolor=(128, 128, 128)):
-#         self.fillcolor = fillcolor
-#
-#     def __call__(self, x, magnitude):
-#         return x.transform(
-#             x.size, Image.AFFINE, (1, 0, 0, magnitude * random.choice([-1, 1]), 1, 0),
-#             Image.BICUBIC, fillcolor=self.fillcolor)
-#
-#
-# class TranslateX(object):
-#     def __init__(self, fillcolor=(128, 128, 128)):
-#         self.fillcolor = fillcolor
-#         self.range = [-150, 150]
-#
-#     def __call__(self, x, magnitude):
-#         return x.transform(
-#             x.size, Image.AFFINE, (1, 0, magnitude * x.size[0] * random.choice([-1, 1]), 0, 1, 0),
-#             fillcolor=self.fillcolor)
-#
-#
-# class TranslateY(object):
-#     def __init__(self, fillcolor=(128, 128, 128)):
-#         self.fillcolor = fillcolor
-#
-#     def __call__(self, x, magnitude):
-#         return x.transform(
-#             x.size, Image.AFFINE, (1, 0, 0, 0, 1, magnitude * x.size[1] * random.choice([-1, 1])),
-#             fillcolor=self.fillcolor)
-#
-#
-# class Rotate(object):
-#     # from https://stackoverflow.com/questions/
-#     # 5252170/specify-image-filling-color-when-rotating-in-python-with-pil-and-setting-expand
-#     def __init__(self):
-#         self.range = [-30, 30]
-#     def __call__(self, x, magnitude):
-#         rot = x.convert("RGBA").rotate(magnitude * random.choice([-1, 1]))
-#         return Image.composite(rot, Image.new("RGBA", rot.size, (128,) * 4), rot).convert(x.mode)
-#
-#
-# class Color(object):
-#     def __init__(self):
-#         self.range = [0.1, 1.9]
-#     def __call__(self, x, magnitude):
-#         return ImageEnhance.Color(x).enhance(1 + magnitude * random.choice([-1, 1]))
-#
-#
-# class Posterize(object):
-#     def __init__(self):
-#         self.range = [4, 8]
-#     def __call__(self, x, magnitude):
-#         return ImageOps.posterize(x, magnitude)
-#
-#
-# class Solarize(object):
-#     def __init__(self):
-#         self.range = [0, 256]
-#     def __call__(self, x, magnitude):
-#         return ImageOps.solarize(x, magnitude)
-#
-#
-# class Contrast(object):
-#     def __init__(self):
-#         self.range = [0.1,1.9]
-#     def __call__(self, x, magnitude):
-#         return ImageEnhance.Contrast(x).enhance(1 + magnitude * random.choice([-1, 1]))
-#
-#
-# class Sharpness(object):
-#     def __init__(self):
-#         self.range = [0.1, 1.9]
-#     def __call__(self, x, magnitude):
-#         return ImageEnhance.Sharpness(x).enhance(1 + magnitude * random.choice([-1, 1]))
-#
-#
-# class Brightness(object):
-#     def __init__(self):
-#         self.range = [0.1, 1.9]
-#     def __call__(self, x, magnitude):
-#         return ImageEnhance.Brightness(x).enhance(1 + magnitude * random.choice([-1, 1]))
-#
-#
-# class AutoContrast(object):
-#     def __call__(self, x, magnitude):
-#         return ImageOps.autocontrast(x)
-#
-#
-# class Equalize(object):
-#     def __call__(self, x, magnitude):
-#         return ImageOps.equalize(x)
-#
-#
-# class Invert(object):
-#     def __call__(self, x, magnitude):
-#         return ImageOps.invert(x)

@@ -1,0 +1,8 @@
+from essl.GA import GA, GA_mo
+
+if __name__ == "__main__":
+    {{ algo }}(
+        {% for param in params -%}
+            {{ param[0] }} = {{ param[1] }},
+        {% endfor %}
+       )
