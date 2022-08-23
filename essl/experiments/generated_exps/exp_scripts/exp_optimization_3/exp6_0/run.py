@@ -65,6 +65,7 @@ if __name__ == "__main__":
         # save environment
         os.system(f"pip freeze > {os.path.join(exp_seed_dir, 'env.txt')}")
         GA(
+            seed=seed,
             pop_size = 15,
             num_generations = 10,
             cxpb = 0.8,

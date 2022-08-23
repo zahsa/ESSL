@@ -27,6 +27,7 @@ if __name__ == "__main__":
         # save environment
         os.system(f"pip freeze > {os.path.join(exp_seed_dir, 'env.txt')}")
         {{ algo }}(
+            seed=seed,
             {% for param in params_algo -%}
                 {{ param[0] }} = {{ param[1] }},
             {% endfor %}
