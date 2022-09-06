@@ -72,28 +72,51 @@ if __name__ == "__main__":
         os.system(f"pip freeze > {os.path.join(exp_seed_dir, 'env.txt')}")
         GA_mo(
             seed=seed,
+            exp_dir=exp_seed_dir,
             pop_size = 15,
+                
             num_generations = 10,
+                
             cxpb1 = 0.8,
+                
             mutpb1 = 0.8,
+                
             cxpb2 = 0.5,
+                
             mutpb2 = 0.2,
+                
             dataset = 'Cifar10',
+                
             backbone = 'largerCNN_backbone',
+                
             ssl_epochs = 10,
+                
             ssl_batch_size = 32,
+                
             evaluate_downstream_method = 'finetune',
+                
             device = 'cuda',
-            exp_dir = './',
+                
+            
             use_tensorboard = True,
+                
             save_plots = True,
+                
             crossover = 'PMX',
+                
             chromosome_length = 3,
+                
             selection = 'roulette',
+                
             adaptive_pb1 = 'AGA',
+                
             eval_method = 'best val test',
+                
             ssl_tasks = 'v6',
+                
             num_elite = 2,
+                
             aug_ops = 'DEFAULT_OPS',
+                
             
            )

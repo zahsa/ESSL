@@ -28,7 +28,10 @@ if __name__ == "__main__":
         os.system(f"pip freeze > {os.path.join(exp_seed_dir, 'env.txt')}")
         {{ algo }}(
             seed=seed,
+            exp_dir=exp_seed_dir,
             {% for param in params_algo -%}
-                {{ param[0] }} = {{ param[1] }},
+                {% if param[0] != 'exp_dir' -%}
+                    {{ param[0] }} = {{ param[1] if param[0]}},
+                {% endif %}
             {% endfor %}
            )
