@@ -21,7 +21,7 @@ crossover = 'PMX'
 chromosome_length = 3
 selection = 'roulette'
 adaptive_pb = 'AGA'
-num_seeds = 5
+num_seeds = 3
 eval_method = 'best val test'
 num_elite = 2
 aug_ops = 'OPS_NO_FLIP'
@@ -46,7 +46,7 @@ args = {
     'chromosome_length':3,
     'selection':'roulette',
     'adaptive_pb':'AGA',
-    'num_seeds':5,
+    'num_seeds':3,
     'eval_method':'best val test',
     'num_elite':2,
     'aug_ops':'OPS_NO_FLIP',

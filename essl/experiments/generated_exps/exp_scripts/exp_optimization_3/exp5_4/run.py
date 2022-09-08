@@ -9,9 +9,9 @@ cxpb = 0.8
 mutpb = 0.8
 dataset = 'Cifar10'
 backbone = 'largerCNN_backbone'
-ssl_task = 'NNCLR'
+ssl_task = 'BYOL'
 ssl_epochs = 10
-ssl_batch_size = 256
+ssl_batch_size = 32
 evaluate_downstream_method = 'finetune'
 device = 'cuda'
 exp_dir = './'
@@ -21,10 +21,9 @@ crossover = 'PMX'
 chromosome_length = 3
 selection = 'roulette'
 adaptive_pb = 'AGA'
-num_seeds = 3
 eval_method = 'best val test'
 num_elite = 2
-aug_ops = 'OPS_NO_FLIP'
+num_seeds = 5
 
 
 args = {
@@ -34,9 +33,9 @@ args = {
     'mutpb':0.8,
     'dataset':'Cifar10',
     'backbone':'largerCNN_backbone',
-    'ssl_task':'NNCLR',
+    'ssl_task':'BYOL',
     'ssl_epochs':10,
-    'ssl_batch_size':256,
+    'ssl_batch_size':32,
     'evaluate_downstream_method':'finetune',
     'device':'cuda',
     'exp_dir':'./',
@@ -46,10 +45,9 @@ args = {
     'chromosome_length':3,
     'selection':'roulette',
     'adaptive_pb':'AGA',
-    'num_seeds':3,
     'eval_method':'best val test',
     'num_elite':2,
-    'aug_ops':'OPS_NO_FLIP',
+    'num_seeds':5,
     
     }
 
@@ -81,11 +79,11 @@ if __name__ == "__main__":
                 
             backbone = 'largerCNN_backbone',
                 
-            ssl_task = 'NNCLR',
+            ssl_task = 'BYOL',
                 
             ssl_epochs = 10,
                 
-            ssl_batch_size = 256,
+            ssl_batch_size = 32,
                 
             evaluate_downstream_method = 'finetune',
                 
@@ -107,8 +105,6 @@ if __name__ == "__main__":
             eval_method = 'best val test',
                 
             num_elite = 2,
-                
-            aug_ops = 'OPS_NO_FLIP',
                 
             
            )

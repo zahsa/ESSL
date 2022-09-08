@@ -5,7 +5,7 @@ import shutil
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='reformat exp dirs')
-    parser.add_argument('--exp_dir', default='', help='dir that contains all the exps with runexp* format')
+    parser.add_argument('--exp_dir', default='', help='dir that contains all the exps with *exp* format')
     parser.add_argument('--targ_dir', default='', help='new target dir')
     args = parser.parse_args()
     exps = glob.glob(os.path.join(args.exp_dir, "*exp*"))
