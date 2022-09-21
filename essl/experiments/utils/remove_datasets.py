@@ -11,8 +11,6 @@ if __name__ == "__main__":
     exps = glob.glob(os.path.join(args.exp_dir, "*exp*"))
     for e in exps:
         seed_directories = [d for d in glob.glob(os.path.join(e, "*/"))]
-
-        seed_directories = [d for d in glob.glob(os.path.join(e, "*/"))]
         for dir in seed_directories:
             new_dir = os.path.join(args.targ_dir, dir.split(args.exp_dir)[1][1:])
             shutil.copytree(dir, new_dir, ignore=shutil.ignore_patterns("*tensorboard*", "*batch*",  "*datasets*", "*cifar*"))
