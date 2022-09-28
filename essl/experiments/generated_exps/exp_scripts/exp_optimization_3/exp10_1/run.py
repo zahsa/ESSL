@@ -54,7 +54,7 @@ args = {
     }
 
 if __name__ == "__main__":
-    for seed in range(num_seeds):
+    for seed in range(5,10):
         exp_seed_dir = os.path.join(exp_dir, str(seed))
         if not os.path.isdir(exp_seed_dir):
             os.mkdir(exp_seed_dir)
