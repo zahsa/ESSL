@@ -13,5 +13,5 @@ if __name__ == "__main__":
         seed_directories = [d for d in glob.glob(os.path.join(e, "*/"))]
         for dir in seed_directories:
             new_dir = os.path.join(args.targ_dir, dir.split(args.exp_dir)[1][1:])
-            shutil.copytree(dir, new_dir, ignore=shutil.ignore_patterns("*tensorboard*", "*batch*",  "*datasets*", "*cifar*"))
+            shutil.copytree(dir, new_dir, ignore=shutil.ignore_patterns("*batch*",  "*datasets*", "*cifar*"))
 
