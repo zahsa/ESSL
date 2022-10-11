@@ -1,3 +1,4 @@
+import copy
 import os
 import numpy as np
 import torchvision
@@ -139,6 +140,7 @@ class fitness_function:
         representation, ssl_losses = self.ssl_task(transform=None,
                                                    device=device
                                                    )
+
         # return all metrics by default
         train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
                                                                                                        # device=device,
@@ -165,9 +167,12 @@ class fitness_function:
         for f in glob.glob(os.path.join(self.model_dir, "*.pt")):
             if f != opt_model:
                 os.remove(f)
-    def save_best_model(self, model_path):
-        print(f"saving model to {model_path}")
-        torch.save(self.best_chromo_info["model"], model_path)
+    def save_best_model(self, model_path, chromo_id):
+        print(f"saving models to {model_path}")
+        pretext_path = os.path.join(model_path, f"{chromo_id}_pretext.pt")
+        torch.save(self.best_chromo_info["model_pretext"], pretext_path)
+        downstream_path = os.path.join(model_path, f"{chromo_id}_downstream.pt")
+        torch.save(self.best_chromo_info["model"], downstream_path)
 
     def __call__(self, chromosome,
                  device=None,
@@ -181,12 +186,15 @@ class fitness_function:
         representation, ssl_losses = self.ssl_task(transform,
                                                    device=device
                                                    )
+        # import pdb;
+        # pdb.set_trace()
         # set save path for model
         # self.evaluate_downstream.save_best_model_path = os.path.join(self.model_dir, str(chromosome.id))+".pt"
-        model, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
+        model, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(copy.deepcopy(representation),
                                                                                                        # device=device,
                                                                                                        report_all_metrics=True,
                                                                                                        eval_method=self.eval_method)
+
         if verbose:
             print("time to eval: ", time.time() - t1)
         if return_losses:
@@ -203,8 +211,9 @@ class fitness_function:
                     self.best_chromo_info["id"] = chromosome.id
                     self.best_chromo_info["fitness"] = test_acc
                     self.best_chromo_info["model"] = model.state_dict()
+                    self.best_chromo_info["model_pretext"] = representation.state_dict()
                     self.clear_models()
-                    self.save_best_model(model_path=os.path.join(self.model_dir, str(chromosome.id))+".pt")
+                    self.save_best_model(model_path=self.model_dir, chromo_id=chromosome.id)
                 return test_acc,
 
             else:
@@ -212,7 +221,7 @@ class fitness_function:
                     self.best_chromo_info["id"] = chromosome.id
                     self.best_chromo_info["fitness"] = max(val_accs)
                     self.clear_models()
-                    self.save_best_model(model_path=os.path.join(self.model_dir, str(chromosome.id))+".pt")
+                    self.save_best_model(model_path=self.model_dir, chromo_id=chromosome.id)
                 return max(val_accs),
 
 class fitness_function_mo:

@@ -20,11 +20,11 @@ save_plots = True
 crossover = 'PMX'
 chromosome_length = 3
 selection = 'roulette'
-num_seeds = 10
+num_seeds = 3
 adaptive_pb = 'AGA'
 eval_method = 'best val test'
 num_elite = 2
-aug_ops = 'DEFAULT_OPS'
+aug_ops = 'OPS_NO_FLIP'
 
 
 args = {
@@ -45,11 +45,11 @@ args = {
     'crossover':'PMX',
     'chromosome_length':3,
     'selection':'roulette',
-    'num_seeds':10,
+    'num_seeds':3,
     'adaptive_pb':'AGA',
     'eval_method':'best val test',
     'num_elite':2,
-    'aug_ops':'DEFAULT_OPS',
+    'aug_ops':'OPS_NO_FLIP',
     
     }
 

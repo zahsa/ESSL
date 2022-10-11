@@ -9,7 +9,7 @@ cxpb = 0.8
 mutpb = 0.8
 dataset = 'Cifar10'
 backbone = 'largerCNN_backbone'
-ssl_task = 'BYOL'
+ssl_task = 'NNCLR'
 ssl_epochs = 10
 ssl_batch_size = 256
 evaluate_downstream_method = 'finetune'
@@ -24,7 +24,7 @@ num_seeds = 10
 adaptive_pb = 'AGA'
 eval_method = 'best val test'
 num_elite = 2
-aug_ops = 'OPS_NO_FLIP'
+aug_ops = 'DEFAULT_OPS'
 
 
 args = {
@@ -34,7 +34,7 @@ args = {
     'mutpb':0.8,
     'dataset':'Cifar10',
     'backbone':'largerCNN_backbone',
-    'ssl_task':'BYOL',
+    'ssl_task':'NNCLR',
     'ssl_epochs':10,
     'ssl_batch_size':256,
     'evaluate_downstream_method':'finetune',
@@ -49,7 +49,7 @@ args = {
     'adaptive_pb':'AGA',
     'eval_method':'best val test',
     'num_elite':2,
-    'aug_ops':'OPS_NO_FLIP',
+    'aug_ops':'DEFAULT_OPS',
     
     }
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
                 
             backbone = 'largerCNN_backbone',
                 
-            ssl_task = 'BYOL',
+            ssl_task = 'NNCLR',
                 
             ssl_epochs = 10,
                 
@@ -108,7 +108,7 @@ if __name__ == "__main__":
                 
             num_elite = 2,
                 
-            aug_ops = 'OPS_NO_FLIP',
+            aug_ops = 'DEFAULT_OPS',
                 
             
            )

@@ -3,14 +3,14 @@ import os
 import datetime
 from essl.GA import GA, GA_mo
 
-pop_size = 15
+pop_size = 10
 num_generations = 10
 cxpb = 0.8
 mutpb = 0.8
 dataset = 'Cifar10'
 backbone = 'largerCNN_backbone'
 ssl_task = 'SimSiam'
-ssl_epochs = 10
+ssl_epochs = 50
 ssl_batch_size = 256
 evaluate_downstream_method = 'finetune'
 device = 'cuda'
@@ -20,22 +20,23 @@ save_plots = True
 crossover = 'PMX'
 chromosome_length = 3
 selection = 'roulette'
-num_seeds = 7
+num_seeds = 3
 adaptive_pb = 'AGA'
 eval_method = 'best val test'
 num_elite = 2
 aug_ops = 'OPS_NO_FLIP'
+downstream_epochs = 50
 
 
 args = {
-    'pop_size':15,
+    'pop_size':10,
     'num_generations':10,
     'cxpb':0.8,
     'mutpb':0.8,
     'dataset':'Cifar10',
     'backbone':'largerCNN_backbone',
     'ssl_task':'SimSiam',
-    'ssl_epochs':10,
+    'ssl_epochs':50,
     'ssl_batch_size':256,
     'evaluate_downstream_method':'finetune',
     'device':'cuda',
@@ -45,16 +46,17 @@ args = {
     'crossover':'PMX',
     'chromosome_length':3,
     'selection':'roulette',
-    'num_seeds':7,
+    'num_seeds':3,
     'adaptive_pb':'AGA',
     'eval_method':'best val test',
     'num_elite':2,
     'aug_ops':'OPS_NO_FLIP',
+    'downstream_epochs':50,
     
     }
 
 if __name__ == "__main__":
-    for seed in range(3, 3+num_seeds):
+    for seed in range(num_seeds):
         exp_seed_dir = os.path.join(exp_dir, str(seed))
         if not os.path.isdir(exp_seed_dir):
             os.mkdir(exp_seed_dir)
@@ -69,7 +71,7 @@ if __name__ == "__main__":
         GA(
             seed=seed,
             exp_dir=exp_seed_dir,
-            pop_size = 15,
+            pop_size = 10,
                 
             num_generations = 10,
                 
@@ -83,7 +85,7 @@ if __name__ == "__main__":
                 
             ssl_task = 'SimSiam',
                 
-            ssl_epochs = 10,
+            ssl_epochs = 50,
                 
             ssl_batch_size = 256,
                 
@@ -109,6 +111,8 @@ if __name__ == "__main__":
             num_elite = 2,
                 
             aug_ops = 'OPS_NO_FLIP',
+                
+            downstream_epochs = 50,
                 
             
            )

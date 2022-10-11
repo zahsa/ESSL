@@ -24,7 +24,7 @@ num_seeds = 10
 adaptive_pb = 'AGA'
 eval_method = 'best val test'
 num_elite = 2
-aug_ops = 'DEFAULT_OPS'
+aug_ops = 'OPS_NO_FLIP'
 
 
 args = {
@@ -49,7 +49,7 @@ args = {
     'adaptive_pb':'AGA',
     'eval_method':'best val test',
     'num_elite':2,
-    'aug_ops':'DEFAULT_OPS',
+    'aug_ops':'OPS_NO_FLIP',
     
     }
 

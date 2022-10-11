@@ -49,7 +49,7 @@ def compare_models(model_1, model_2):
         else:
             models_differ += 1
             if (key_item_1[0] == key_item_2[0]):
-                print('Mismtach found at', key_item_1[0])
+                print('Mismatch found at', key_item_1[0])
             else:
                 raise Exception
     if models_differ == 0:
