@@ -1,5 +1,6 @@
 import copy
 import os
+import json
 import numpy as np
 import torchvision
 import torch
@@ -278,9 +279,15 @@ class fitness_function_mo:
         for f in glob.glob(os.path.join(self.model_dir, "*.pt")):
             if f != opt_model:
                 os.remove(f)
-    def save_best_model(self, model_path):
-        print(f"saving model to {model_path}")
-        torch.save(self.best_chromo_info["model"], model_path)
+    def save_best_model(self, model_path, chromo_id):
+        print(f"saving models to {model_path}")
+        pretext_path = os.path.join(model_path, f"{chromo_id}_pretext.pt")
+        torch.save(self.best_chromo_info["model_pretext"], pretext_path)
+        downstream_path = os.path.join(model_path, f"{chromo_id}_downstream.pt")
+        torch.save(self.best_chromo_info["model"], downstream_path)
+        with open(os.path.join(model_path, "chromo.json"), "w") as f:
+            json.dump(self.best_chromo_info["chromo"], f)
+
     @staticmethod
     def gen_augmentation_torch(chromosome: list) -> torchvision.transforms.Compose:
         # gen augmentation
@@ -328,11 +335,13 @@ class fitness_function_mo:
             # default no return losses,
             if self.eval_method in ["best val test", "final test"]:
                 if test_acc > self.best_chromo_info["fitness"]:
+                    self.best_chromo_info["chromo"] = chromosome
                     self.best_chromo_info["id"] = chromosome.id
                     self.best_chromo_info["fitness"] = test_acc
                     self.best_chromo_info["model"] = model.state_dict()
+                    self.best_chromo_info["model_pretext"] = representation.state_dict()
                     self.clear_models()
-                    self.save_best_model(model_path=os.path.join(self.model_dir, str(chromosome.id)) + ".pt")
+                    self.save_best_model(model_path=self.model_dir, chromo_id=chromosome.id)
                 return test_acc,
 
             else:
