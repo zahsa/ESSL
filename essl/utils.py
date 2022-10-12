@@ -3,7 +3,13 @@ import PIL
 import pandas as pd
 import os
 import torch
+import numpy as np
 from essl import chromosome
+from essl import backbones
+from essl.evaluate_downstream import finetune_model
+from essl import datasets
+
+import loss_landscapes
 
 def gen_augmentation_PIL(chromosome: list) -> torchvision.transforms.Compose:
     # gen augmentation
@@ -72,16 +78,45 @@ def compare_dicts(model_1, model_2):
         print('Models match perfectly! :)')
 
 
-def automate_cc_exp_creation(target_dir, shell_script_path):
-    """
-    takes shell script and creates a python script, slurm file and run file
-    :param target_dir:
-    :param shell_script_path:
-    :return:
-    """
-    # gen run.sh
-    # gen slurm file
-    # gen python script
+def ll_random_plane(model_path,
+                      dataset,
+                      backbone,
+                      save_dir,
+                      distance,
+                      steps):
+    # load model
+    backbone = backbones.__dict__[backbone]()
+    model = finetune_model(backbone.backbone, backbone.in_features, 10)
+    model.load_state_dict(torch.load(model_path))
+
+    # get data
+    data = datasets.__dict__[dataset]()
+    dataloader = torch.utils.data.DataLoader(data.test_data,
+                                              batch_size=len(data.test_data), shuffle=False)
+    X, y = iter(dataloader).__next__()
+    criterion = torch.nn.CrossEntropyLoss()
+    metric = loss_landscapes.metrics.Loss(criterion, X, y)
+
+    # compute random plane
+    loss_data_fin = loss_landscapes.random_plane(model, metric, distance, steps, normalization='filter', deepcopy_model=True)
+    # save loss data
+    with open(os.path.join(save_dir, 'random_plane.npy'), 'wb') as f:
+        np.save(f, loss_data_fin)
+
+    # plot contour
+    plt.contour(loss_data_fin, levels=50)
+    plt.savefig(os.path.join(save_dir, "contour.png"))
+    plt.clf()
+
+    # plot surface
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    X = np.array([[j for j in range(STEPS)] for i in range(STEPS)])
+    Y = np.array([[i for _ in range(STEPS)] for i in range(STEPS)])
+    ax.plot_surface(X, Y, loss_data_fin, rstride=1, cstride=1, cmap='viridis', edgecolor='none')
+    plt.savefig(os.path.join(save_dir, "surface.png"))
+
+
 
 
 
