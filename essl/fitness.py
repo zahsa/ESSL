@@ -143,14 +143,14 @@ class fitness_function:
                                                    )
 
         # return all metrics by default
-        train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
+        model, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(representation,
                                                                                                        # device=device,
                                                                                                        report_all_metrics=True,
                                                                                                        eval_method=self.eval_method)
         if verbose:
             print("time to eval: ", time.time() - t1)
         if return_losses:
-            return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
+            return model, ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
         else:
             # store the losses with id of chromosome, try statement to allow for use outside of GA
             try:
