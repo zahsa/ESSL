@@ -88,6 +88,16 @@ def ll_random_plane(model_path,
     # load model
     backbone = backbones.__dict__[backbone]()
     model = finetune_model(backbone.backbone, backbone.in_features, 10)
+    d = torch.load(model_path)
+
+    keys_init = model.state_dict().keys()
+    for k in keys_init:
+        try:
+            d[k]
+        except KeyError:
+            print(k)
+    import pdb;
+    pdb.set_trace()
     model.load_state_dict(torch.load(model_path))
 
     # get data
@@ -152,3 +162,10 @@ def ll_linear_interpolation(model_path1,
     plt.clf()
 
 
+if __name__ == "__main__":
+    ll_random_plane(model_path="/home/noah/ESSL/final_exps/optimization/exp8_4/4/models/86_downstream.pt",
+                    dataset="Cifar10",
+                    backbone="largerCNN_backbone",
+                    save_dir="/home/noah/ESSL/final_exps/optimization/exp8_4/4/loss_landscapes",
+                    distance=10,
+                    steps=50)
