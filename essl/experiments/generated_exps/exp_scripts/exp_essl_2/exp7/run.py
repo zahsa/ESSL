@@ -12,7 +12,7 @@ mutpb2 = 0.2
 dataset = 'Cifar10'
 backbone = 'largerCNN_backbone'
 ssl_epochs = 10
-ssl_batch_size = 32
+ssl_batch_size = 256
 evaluate_downstream_method = 'finetune'
 device = 'cuda'
 exp_dir = './'
@@ -26,7 +26,7 @@ adaptive_pb1 = 'AGA'
 eval_method = 'best val test'
 ssl_tasks = 'v6'
 num_elite = 2
-aug_ops = 'OPS_NO_FLIP'
+aug_ops = 'DEFAULT_OPS'
 
 
 args = {
@@ -39,7 +39,7 @@ args = {
     'dataset':'Cifar10',
     'backbone':'largerCNN_backbone',
     'ssl_epochs':10,
-    'ssl_batch_size':32,
+    'ssl_batch_size':256,
     'evaluate_downstream_method':'finetune',
     'device':'cuda',
     'exp_dir':'./',
@@ -53,7 +53,7 @@ args = {
     'eval_method':'best val test',
     'ssl_tasks':'v6',
     'num_elite':2,
-    'aug_ops':'OPS_NO_FLIP',
+    'aug_ops':'DEFAULT_OPS',
     
     }
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
                 
             ssl_epochs = 10,
                 
-            ssl_batch_size = 32,
+            ssl_batch_size = 256,
                 
             evaluate_downstream_method = 'finetune',
                 
@@ -116,7 +116,7 @@ if __name__ == "__main__":
                 
             num_elite = 2,
                 
-            aug_ops = 'OPS_NO_FLIP',
+            aug_ops = 'DEFAULT_OPS',
                 
             
            )

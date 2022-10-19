@@ -4,6 +4,7 @@ import pandas as pd
 import os
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
 from essl import chromosome
 from essl import backbones
 from essl.evaluate_downstream import finetune_model
@@ -111,12 +112,43 @@ def ll_random_plane(model_path,
     # plot surface
     fig = plt.figure()
     ax = plt.axes(projection='3d')
-    X = np.array([[j for j in range(STEPS)] for i in range(STEPS)])
-    Y = np.array([[i for _ in range(STEPS)] for i in range(STEPS)])
+    X = np.array([[j for j in range(steps)] for i in range(steps)])
+    Y = np.array([[i for _ in range(steps)] for i in range(steps)])
     ax.plot_surface(X, Y, loss_data_fin, rstride=1, cstride=1, cmap='viridis', edgecolor='none')
     plt.savefig(os.path.join(save_dir, "surface.png"))
 
+def ll_linear_interpolation(model_path1,
+                            dataset,
+                            backbone,
+                            save_dir,
+                            steps,
+                            model_path2=None
+                            ):
+    # load models
+    backbone = backbones.__dict__[backbone]()
+    # model 1
+    model1 = finetune_model(copy.deepcopy(backbone.backbone), backbone.in_features, 10)
+    model1.load_state_dict(torch.load(model_path1))
+    # model 2
+    model2 = finetune_model(copy.deepcopy(backbone.backbone), backbone.in_features, 10)
+    if model_path2:
+        model2.load_state_dict(torch.load(model_path2))
+    # get data
+    data = datasets.__dict__[dataset]()
+    dataloader = torch.utils.data.DataLoader(data.test_data,
+                                             batch_size=len(data.test_data), shuffle=False)
+    X, y = iter(dataloader).__next__()
+    criterion = torch.nn.CrossEntropyLoss()
+    metric = loss_landscapes.metrics.Loss(criterion, X, y)
 
-
+    # compute loss data
+    loss_data = loss_landscapes.linear_interpolation(model1, model2, metric, steps, deepcopy_model=True)
+    # save loss data
+    with open(os.path.join(save_dir, 'linear_interpolation.npy'), 'wb') as f:
+        np.save(f, loss_data)
+    # plot linear interpolation
+    plt.plot([1 / steps * i for i in range(steps)], loss_data)
+    plt.savefig(os.path.join(save_dir, "linear_interpolation.png"))
+    plt.clf()
 
 

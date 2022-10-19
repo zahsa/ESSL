@@ -9,10 +9,10 @@ cxpb1 = 0.8
 mutpb1 = 0.8
 cxpb2 = 0.5
 mutpb2 = 0.2
-dataset = 'Cifar10'
+dataset = 'SVHN'
 backbone = 'largerCNN_backbone'
 ssl_epochs = 10
-ssl_batch_size = 256
+ssl_batch_size = 32
 evaluate_downstream_method = 'finetune'
 device = 'cuda'
 exp_dir = './'
@@ -21,12 +21,12 @@ save_plots = True
 crossover = 'PMX'
 chromosome_length = 3
 selection = 'roulette'
-num_seeds = 7
+num_seeds = 10
 adaptive_pb1 = 'AGA'
 eval_method = 'best val test'
 ssl_tasks = 'v6'
 num_elite = 2
-aug_ops = 'OPS_NO_FLIP'
+aug_ops = 'DEFAULT_OPS'
 
 
 args = {
@@ -36,10 +36,10 @@ args = {
     'mutpb1':0.8,
     'cxpb2':0.5,
     'mutpb2':0.2,
-    'dataset':'Cifar10',
+    'dataset':'SVHN',
     'backbone':'largerCNN_backbone',
     'ssl_epochs':10,
-    'ssl_batch_size':256,
+    'ssl_batch_size':32,
     'evaluate_downstream_method':'finetune',
     'device':'cuda',
     'exp_dir':'./',
@@ -48,17 +48,17 @@ args = {
     'crossover':'PMX',
     'chromosome_length':3,
     'selection':'roulette',
-    'num_seeds':7,
+    'num_seeds':10,
     'adaptive_pb1':'AGA',
     'eval_method':'best val test',
     'ssl_tasks':'v6',
     'num_elite':2,
-    'aug_ops':'OPS_NO_FLIP',
+    'aug_ops':'DEFAULT_OPS',
     
     }
 
 if __name__ == "__main__":
-    for seed in range(3, 3+num_seeds):
+    for seed in range(num_seeds):
         exp_seed_dir = os.path.join(exp_dir, str(seed))
         if not os.path.isdir(exp_seed_dir):
             os.mkdir(exp_seed_dir)
@@ -85,13 +85,13 @@ if __name__ == "__main__":
                 
             mutpb2 = 0.2,
                 
-            dataset = 'Cifar10',
+            dataset = 'SVHN',
                 
             backbone = 'largerCNN_backbone',
                 
             ssl_epochs = 10,
                 
-            ssl_batch_size = 256,
+            ssl_batch_size = 32,
                 
             evaluate_downstream_method = 'finetune',
                 
@@ -116,7 +116,7 @@ if __name__ == "__main__":
                 
             num_elite = 2,
                 
-            aug_ops = 'OPS_NO_FLIP',
+            aug_ops = 'DEFAULT_OPS',
                 
             
            )

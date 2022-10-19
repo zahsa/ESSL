@@ -21,7 +21,7 @@ save_plots = True
 crossover = 'PMX'
 chromosome_length = 3
 selection = 'roulette'
-num_seeds = 3
+num_seeds = 10
 adaptive_pb1 = 'AGA'
 eval_method = 'best val test'
 ssl_tasks = 'v6'
@@ -48,7 +48,7 @@ args = {
     'crossover':'PMX',
     'chromosome_length':3,
     'selection':'roulette',
-    'num_seeds':3,
+    'num_seeds':10,
     'adaptive_pb1':'AGA',
     'eval_method':'best val test',
     'ssl_tasks':'v6',
