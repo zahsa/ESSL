@@ -5,14 +5,13 @@ from essl.GA import GA, GA_mo
 
 pop_size = 15
 num_generations = 10
-cxpb1 = 0.8
-mutpb1 = 0.8
-cxpb2 = 0.5
-mutpb2 = 0.2
+cxpb = 0.8
+mutpb = 0.8
 dataset = 'SVHN'
 backbone = 'largerCNN_backbone'
+ssl_task = 'NNCLR'
 ssl_epochs = 10
-ssl_batch_size = 256
+ssl_batch_size = 32
 evaluate_downstream_method = 'finetune'
 device = 'cuda'
 exp_dir = './'
@@ -22,9 +21,8 @@ crossover = 'PMX'
 chromosome_length = 3
 selection = 'roulette'
 num_seeds = 10
-adaptive_pb1 = 'AGA'
+adaptive_pb = 'AGA'
 eval_method = 'best val test'
-ssl_tasks = 'v6'
 num_elite = 2
 aug_ops = 'DEFAULT_OPS'
 
@@ -32,14 +30,13 @@ aug_ops = 'DEFAULT_OPS'
 args = {
     'pop_size':15,
     'num_generations':10,
-    'cxpb1':0.8,
-    'mutpb1':0.8,
-    'cxpb2':0.5,
-    'mutpb2':0.2,
+    'cxpb':0.8,
+    'mutpb':0.8,
     'dataset':'SVHN',
     'backbone':'largerCNN_backbone',
+    'ssl_task':'NNCLR',
     'ssl_epochs':10,
-    'ssl_batch_size':256,
+    'ssl_batch_size':32,
     'evaluate_downstream_method':'finetune',
     'device':'cuda',
     'exp_dir':'./',
@@ -49,9 +46,8 @@ args = {
     'chromosome_length':3,
     'selection':'roulette',
     'num_seeds':10,
-    'adaptive_pb1':'AGA',
+    'adaptive_pb':'AGA',
     'eval_method':'best val test',
-    'ssl_tasks':'v6',
     'num_elite':2,
     'aug_ops':'DEFAULT_OPS',
     
@@ -70,28 +66,26 @@ if __name__ == "__main__":
 
         # save environment
         os.system(f"pip freeze > {os.path.join(exp_seed_dir, 'env.txt')}")
-        GA_mo(
+        GA(
             seed=seed,
             exp_dir=exp_seed_dir,
             pop_size = 15,
                 
             num_generations = 10,
                 
-            cxpb1 = 0.8,
+            cxpb = 0.8,
                 
-            mutpb1 = 0.8,
-                
-            cxpb2 = 0.5,
-                
-            mutpb2 = 0.2,
+            mutpb = 0.8,
                 
             dataset = 'SVHN',
                 
             backbone = 'largerCNN_backbone',
                 
+            ssl_task = 'NNCLR',
+                
             ssl_epochs = 10,
                 
-            ssl_batch_size = 256,
+            ssl_batch_size = 32,
                 
             evaluate_downstream_method = 'finetune',
                 
@@ -108,11 +102,9 @@ if __name__ == "__main__":
                 
             selection = 'roulette',
                 
-            adaptive_pb1 = 'AGA',
+            adaptive_pb = 'AGA',
                 
             eval_method = 'best val test',
-                
-            ssl_tasks = 'v6',
                 
             num_elite = 2,
                 

@@ -88,16 +88,6 @@ def ll_random_plane(model_path,
     # load model
     backbone = backbones.__dict__[backbone]()
     model = finetune_model(backbone.backbone, backbone.in_features, 10)
-    d = torch.load(model_path)
-
-    keys_init = model.state_dict().keys()
-    for k in keys_init:
-        try:
-            d[k]
-        except KeyError:
-            print(k)
-    import pdb;
-    pdb.set_trace()
     model.load_state_dict(torch.load(model_path))
 
     # get data
