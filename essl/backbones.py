@@ -59,3 +59,10 @@ class tinyCNN_backbone(nn.Module):
         )
         self.in_features = 64
 
+
+if __name__ == "__main__":
+    from torchsummary import summary
+    model = largerCNN_backbone()
+    # print(model)
+    for index, layer in enumerate(model.backbone): 
+        print(layer)

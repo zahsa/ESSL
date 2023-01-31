@@ -30,6 +30,12 @@ setup(
                       'torch==1.12.0', 'torchmetrics==0.8.0', 'torchvision==0.13.0', 'tornado==6.1', 'tqdm==4.64.0', 'traitlets==5.2.1.post0',
                       'typing_extensions==4.3.0', 'urllib3==1.26.9', 'wcwidth==0.2.5', 'Werkzeug==2.1.2', 'yarl==1.7.2', 'zipp==3.8.0'],
     entry_points={
-        "console_scripts": ["essl_GA = essl.main:GA_cli", "essl_GA_bootstrap = essl.main:GA_bootstrap_cli", "essl_GA_mo = essl.main:GA_mo_cli", "essl_GA_mo_bootstrap = essl.main:GA_mo_bootstrap_cli"]
-    },
-)
+        "console_scripts": ["essl_GA = essl.main:GA_cli",
+                            "essl_GA_bootstrap = essl.main:GA_bootstrap_cli",
+                            "essl_GA_mo = essl.main:GA_mo_cli",
+                            "essl_GA_mo_bootstrap = essl.main:GA_mo_bootstrap_cli",
+                            "essl_ll_random_plane = essl.utils:ll_random_plane_cli",
+                            "essl_ll_linear_i = essl.utils:ll_linear_interpolation_cli"
+                    ]
+                        },
+                    )

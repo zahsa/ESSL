@@ -44,6 +44,7 @@ class pretext_task:
         self.device = device
     def __call__(self,
                  transform,
+                 model_ckpt=None,
                  device=None
                  ):
         if not device:
@@ -52,6 +53,8 @@ class pretext_task:
         backbone = self.backbone()
         torch.manual_seed(self.seed)
         model = self.model(backbone)
+        if model_ckpt:
+            model.load_state_dict(torch.load(model_ckpt))
         loss = model.fit(
                   self.dataset,
                   self.batch_size,
@@ -178,14 +181,17 @@ class fitness_function:
     def __call__(self, chromosome,
                  device=None,
                  return_losses=False,
-                 verbose=True):
+                 verbose=True,
+                 pretext_model_ckpt=None,
+                 eval_test_during_training=False):
         if not device:
             device = self.device
         t1 = time.time()
         transform = self.gen_augmentation_torch(chromosome)
 
         representation, ssl_losses = self.ssl_task(transform,
-                                                   device=device
+                                                   device=device,
+                                                   model_ckpt=pretext_model_ckpt
                                                    )
         # import pdb;
         # pdb.set_trace()
@@ -194,12 +200,13 @@ class fitness_function:
         model, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss = self.evaluate_downstream(copy.deepcopy(representation),
                                                                                                        # device=device,
                                                                                                        report_all_metrics=True,
-                                                                                                       eval_method=self.eval_method)
+                                                                                                       eval_method=self.eval_method,
+                                                                                                       eval_test_during_training=eval_test_during_training)
 
         if verbose:
             print("time to eval: ", time.time() - t1)
         if return_losses:
-            return ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
+            return model, ssl_losses, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
         else:
             # store the losses with id of chromosome, try statement to allow for use outside of GA
             try:

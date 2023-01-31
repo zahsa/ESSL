@@ -66,7 +66,8 @@ class finetune:
     def __call__(self, backbone: torch.nn.Module,
                  device=None,
                  report_all_metrics: bool=False,
-                 eval_method: str="best val test"):
+                 eval_method: str="best val test",
+                 eval_test_during_training=False):
         torch.manual_seed(self.seed)
         model = finetune_model(backbone.backbone, backbone.in_features, self.dataset.num_classes).to(self.device)
         trainloader = torch.utils.data.DataLoader(self.dataset.train_data,
@@ -76,6 +77,10 @@ class finetune:
                                                     batch_size=self.batch_size, shuffle=False)
         else:
             valloader = None
+        # test set #
+        testloader = torch.utils.data.DataLoader(self.dataset.test_data,
+                                                 batch_size=self.batch_size,
+                                                 shuffle=False)
         criterion = self.loss
         optimizer = self.opt(model)
         if self.use_scheduler:
@@ -87,6 +92,9 @@ class finetune:
         train_accs = []
         val_losses = []
         val_accs = []
+        if eval_test_during_training:
+            test_losses = []
+            test_accs = []
         max_val_acc = -1
         max_val_model = copy.deepcopy(model.state_dict())
         if self.verbose:
@@ -143,6 +151,28 @@ class finetune:
                 # record loss
                 val_loss = running_loss / len(valloader)
                 val_losses.append(val_loss)
+
+            if eval_test_during_training:
+
+                model.eval()
+                total = 0
+                correct = 0
+                testing_loss = 0.0
+                # deactivate autograd engine
+                with torch.no_grad():
+                    for X, y in testloader:
+                        inputs = X.to(self.device)
+                        labels = y.to(self.device)
+                        outputs = model(inputs)
+                        loss = criterion(outputs, labels)
+                        testing_loss += loss.item()
+                        _, predicted = outputs.max(1)
+                        total += labels.size(0)
+                        correct += predicted.eq(labels).sum().item()
+                    test_loss = testing_loss / len(testloader)
+                test_acc = 100. * correct / total
+                test_losses.append(test_loss)
+                test_accs.append(test_acc)
             # tensorboard
             if self.writer:
                 self.writer.add_scalar('train/loss', train_loss, epoch)
@@ -183,6 +213,9 @@ class finetune:
         if self.save_best_model_path:
             print(f"saving model to {self.save_best_model_path}")
             torch.save(model.state_dict(), self.save_best_model_path)
+
+        if report_all_metrics and eval_test_during_training:
+            return model, train_losses, train_accs, val_losses, val_accs, test_accs, test_losses
         if report_all_metrics:
             return model, train_losses, train_accs, val_losses, val_accs, test_acc, test_loss
 
