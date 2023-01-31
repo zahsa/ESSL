@@ -1,0 +1,2 @@
+,final ssl loss,final train loss,final val loss,final test loss,test acc,train acc,val acc
+0,2.489805711826808,0.39335775283226837,0.45423461724618436,0.458099276232072,84.94,86.46,85.08

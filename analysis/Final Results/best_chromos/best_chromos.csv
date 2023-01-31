@@ -1,0 +1,17 @@
+,aug1,op1,aug2,op2,aug3,op3,exp,algo,seed,generation,fitness,best_loss,exp_i,dir
+0,Color,1.482108065099183,TranslateX,3.0,ShearX,0.1317252074499123,exp10_0,SwaV,5,9,93.50030731407497,0.30871957540512085,137,/home/noah/ESSL/cc_experiments/es_figs7/models_figs8/opt/exp10_0/5
+1,Sharpness,0.9459531405343823,Contrast,1.2753599170758068,Solarize,0.32468828442743336,exp10_1,BYOL,5,9,93.74231714812538,,148,/home/noah/ESSL/cc_experiments/es_figs7/models_figs8/opt/exp10_1/5
+2,Contrast,1.1492768005080465,TranslateX,5.0,ShearY,0.12018328768084327,exp10_2,SimSiam,7,1,93.54640442532268,0.30499744415283203,18,/home/noah/ESSL/cc_experiments/es_figs7/models_figs8/opt/exp10_2/7
+3,Color,0.9020930844684492,ShearY,0.04990912373797426,Solarize,0.32468828442743336,exp10_3,NNCLR,5,7,93.4119545175169,,111,/home/noah/ESSL/cc_experiments/es_figs7/models_figs8/opt/exp10_3/5
+4,Sharpness,0.8848557237234199,Contrast,1.182348184804551,VerticalFlip,0.08094956837362144,exp11_0,SwaV,2,1,93.29287031346036,0.30377811193466187,17,/home/noah/ESSL/cc_experiments/es_figs11_ex_6_11/exp11_0/2
+5,ShearY,0.17389830842710824,Brightness,0.6851034108918533,Color,1.7404569140950517,exp11_1,BYOL,2,7,93.39274738783037,0.30393511056900024,116,/home/noah/ESSL/cc_experiments/es_figs11/models_figs11/opt/exp11_1/2
+6,Rotate,28.0,Brightness,1.0059240474663502,TranslateX,6.0,exp11_2,SimSiam,2,7,93.4081130915796,0.3056201636791229,118,/home/noah/ESSL/cc_experiments/es_figs11/models_figs11/opt/exp11_2/2
+7,VerticalFlip,0.9819392547566425,TranslateX,13.0,ShearX,0.1609039651913977,exp11_3,NNCLR,2,9,93.35049170251997,0.3029908835887909,148,/home/noah/ESSL/cc_experiments/es_figs11/models_figs11/opt/exp11_3/2
+8,Contrast,0.9686110141915404,ShearY,0.18517583129224988,ShearX,0.10460432864702825,exp6_0,NNCLR,1,5,84.26,0.5275607705116272,88,/home/noah/ESSL/cc_experiments/es_figs7/models_figs8/opt/exp6_0/1
+9,Solarize,0.6961839960423299,Contrast,1.396402842262229,ShearY,0.007374745914453765,exp6_1,SwaV,1,9,84.3,0.5282472968101501,148,/home/noah/ESSL/cc_experiments/es_figs11_ex_6_11/exp6_1/1
+10,Contrast,0.9686110141915404,Sharpness,0.33936066048198305,Rotate,-1.0,exp6_2,BYOL,4,6,84.66,0.5288098454475403,103,/home/noah/ESSL/cc_experiments/es_figs11/models_figs11/opt/exp6_2/4
+11,TranslateX,8.0,VerticalFlip,0.6398157028426366,Contrast,1.2350417313712478,exp6_3,SimSiam,1,7,84.48,0.5266983509063721,118,/home/noah/ESSL/cc_experiments/es_figs7/models_figs8/opt/exp6_3/1
+12,TranslateX,8.0,Brightness,0.6905150754934473,Color,0.5025982052759485,exp8_4,SwaV,7,7,84.57,0.5145220756530762,118,/home/noah/ESSL/cc_experiments/es_figs7/models_figs8/opt/exp8_4/7
+13,ShearY,0.020955256766536617,TranslateX,6.0,Color,0.5025982052759485,exp8_5,BYOL,6,6,84.2,0.528037428855896,103,/home/noah/ESSL/cc_experiments/es_figs7/models_figs8/opt/exp8_5/6
+14,Rotate,22.0,TranslateY,1.0,HorizontalFlip,0.7158283743946523,exp8_6,SimSiam,1,9,84.43,0.5331330895423889,140,/home/noah/ESSL/cc_experiments/es_figs7/models_figs8/opt/exp8_6/1
+15,Sharpness,0.8848557237234199,Contrast,1.182348184804551,ShearX,0.09833184348662795,exp8_7,NNCLR,6,1,84.36,0.529963493347168,17,/home/noah/ESSL/cc_experiments/es_figs7/models_figs8/opt/exp8_7/6
