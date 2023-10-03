@@ -33,3 +33,11 @@ essl_train \
   --use_tensorboard True \
   --save_plots True
 ```
+## Citation
+```bibtex
+@article{barrett2023evolutionary,
+  title={Evolutionary Augmentation Policy Optimization for Self-supervised Learning},
+  author={Barrett, Noah and Sadeghi, Zahra and Matwin, Stan},
+  journal={AAIML.2023.1167},
+  year={2023}
+}
